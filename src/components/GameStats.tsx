@@ -80,7 +80,7 @@ export const GameStats = ({ cards, activeCards }: GameStatsProps) => {
   ]
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 400, mt: 2 }}>
+    <Box sx={{ width: '100%', maxWidth: 420, mt: 2 }}>
       <Paper 
         elevation={1} 
         sx={{ 

@@ -81,6 +81,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   onClick={(e) => {
                     e.stopPropagation()
                     onMarkKnown()
+                    handleReset()
                   }}
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
@@ -97,6 +98,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   onClick={(e) => {
                     e.stopPropagation()
                     onMarkUnknown()
+                    handleReset()
                   }}
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
@@ -131,9 +133,6 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
               Original: {card.word}
             </Typography>
             
-            <Typography variant="caption" sx={{ opacity: 0.7, mb: 2, textAlign: 'center' }}>
-              ✓ Know it | ✗ Review | ↻ Flip back
-            </Typography>
             
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Tooltip title="I know this word! ✓" arrow placement="top">
@@ -141,6 +140,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   onClick={(e) => {
                     e.stopPropagation()
                     onMarkKnown()
+                    handleReset()
                   }}
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
@@ -157,6 +157,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   onClick={(e) => {
                     e.stopPropagation()
                     onMarkUnknown()
+                    handleReset()
                   }}
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
@@ -165,22 +166,6 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   }}
                 >
                   <CloseIcon />
-                </IconButton>
-              </Tooltip>
-              
-              <Tooltip title="Flip back to front" arrow placement="top">
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleReset()
-                  }}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                  }}
-                >
-                  <RefreshIcon />
                 </IconButton>
               </Tooltip>
             </Box>
