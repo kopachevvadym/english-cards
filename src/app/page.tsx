@@ -75,6 +75,8 @@ export default function Home() {
         }
     }
 
+
+
     return (
         <>
             <AppBar position="static" elevation={0}>
@@ -177,9 +179,20 @@ export default function Home() {
                                 onMarkUnknown={handleMarkUnknown}
                             />
 
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-                                Click the card to flip it, then mark if you know the word or need to review it again.
-                            </Typography>
+                            <Box sx={{ textAlign: 'center', mt: 2, maxWidth: 400 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    💡 <strong>How to use:</strong>
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                    1. Mark ✓ if you know the word, or click to see translation
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                    2. Use ✗ to review words again later
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                    3. Known words won't appear again
+                                </Typography>
+                            </Box>
                         </>
                     )}
                 </Box>

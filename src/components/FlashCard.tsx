@@ -7,6 +7,7 @@ import {
   Typography,
   Box,
   IconButton,
+  Tooltip,
 } from '@mui/material'
 import {
   Check as CheckIcon,
@@ -60,14 +61,53 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
               textAlign: 'center',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white',
+              position: 'relative',
             }}
           >
             <Typography variant="h4" component="div" gutterBottom>
               {card.word}
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 2 }}>
-              Click to reveal translation
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 2, mb: 3 }}>
+              👆 Click to reveal translation
             </Typography>
+            
+            <Typography variant="caption" sx={{ opacity: 0.7, mb: 2, textAlign: 'center' }}>
+              Know this word already?
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Tooltip title="I know this word! ✓" arrow placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMarkKnown()
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(76,175,80,0.3)' },
+                  }}
+                >
+                  <CheckIcon />
+                </IconButton>
+              </Tooltip>
+              
+              <Tooltip title="Need to review this again" arrow placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMarkUnknown()
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(244,67,54,0.3)' },
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </CardContent>
         ) : (
           /* Back Side */
@@ -87,53 +127,62 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
             <Typography variant="h4" component="div" gutterBottom>
               {card.translation}
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 1, mb: 3 }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 1, mb: 2 }}>
               Original: {card.word}
             </Typography>
             
+            <Typography variant="caption" sx={{ opacity: 0.7, mb: 2, textAlign: 'center' }}>
+              ✓ Know it | ✗ Review | ↻ Flip back
+            </Typography>
+            
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onMarkKnown()
-                }}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                }}
-                title="Mark as known"
-              >
-                <CheckIcon />
-              </IconButton>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onMarkUnknown()
-                }}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                }}
-                title="Review again"
-              >
-                <CloseIcon />
-              </IconButton>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleReset()
-                }}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                }}
-                title="Flip back"
-              >
-                <RefreshIcon />
-              </IconButton>
+              <Tooltip title="I know this word! ✓" arrow placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMarkKnown()
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(76,175,80,0.3)' },
+                  }}
+                >
+                  <CheckIcon />
+                </IconButton>
+              </Tooltip>
+              
+              <Tooltip title="Need to review this again" arrow placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMarkUnknown()
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(244,67,54,0.3)' },
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+              
+              <Tooltip title="Flip back to front" arrow placement="top">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleReset()
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                  }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </CardContent>
         )}
