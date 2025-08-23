@@ -14,13 +14,22 @@ import {
     Chip,
 } from '@mui/material'
 import {
-    Add as AddIcon,
     NavigateNext as NextIcon,
     NavigateBefore as PrevIcon,
     Refresh as RefreshIcon,
+    ViewList as ViewListIcon,
+    ViewModule as ViewModuleIcon,
+    Upload as UploadIcon,
+    Create as CreateIcon,
+    Shuffle as ShuffleIcon,
+    CloudDownload as CloudDownloadIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
+import { AddWordDialog } from '@/components/AddWordDialog'
+import { ProgressDialog } from '@/components/ProgressDialog'
+import { WordList } from '@/components/WordList'
+import { GameStats } from '@/components/GameStats'
 import { useCards } from '@/hooks/useCards'
 
 export default function Home() {
@@ -33,9 +42,13 @@ export default function Home() {
         markAsUnknown,
         getActiveCards,
         resetProgress,
+        isShuffled,
+        toggleShuffle,
     } = useCards()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
+    const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
+    const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
 
     const activeCards = getActiveCards()
     const currentCard = activeCards[currentCardIndex]
@@ -75,6 +88,11 @@ export default function Home() {
         }
     }
 
+    const handleAddSingleWord = (word: string, translation: string) => {
+        const jsonData = [{ [word]: translation }]
+        importCards(jsonData)
+    }
+
 
 
     return (
@@ -84,12 +102,40 @@ export default function Home() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         English Cards
                     </Typography>
-                    <Chip
-                        label={`${cards.length - activeCards.length}/${cards.length} learned`}
-                        color="secondary"
-                        variant="outlined"
-                        sx={{ color: 'white', borderColor: 'white' }}
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Button
+                            variant={viewMode === 'cards' ? 'contained' : 'outlined'}
+                            size="small"
+                            startIcon={<ViewModuleIcon />}
+                            onClick={() => setViewMode('cards')}
+                            sx={{ 
+                                color: viewMode === 'cards' ? 'inherit' : 'white',
+                                borderColor: 'white',
+                                '&:hover': { borderColor: 'white' }
+                            }}
+                        >
+                            Cards
+                        </Button>
+                        <Button
+                            variant={viewMode === 'list' ? 'contained' : 'outlined'}
+                            size="small"
+                            startIcon={<ViewListIcon />}
+                            onClick={() => setViewMode('list')}
+                            sx={{ 
+                                color: viewMode === 'list' ? 'inherit' : 'white',
+                                borderColor: 'white',
+                                '&:hover': { borderColor: 'white' }
+                            }}
+                        >
+                            List
+                        </Button>
+                        <Chip
+                            label={`${cards.length - activeCards.length}/${cards.length} learned`}
+                            color="secondary"
+                            variant="outlined"
+                            sx={{ color: 'white', borderColor: 'white' }}
+                        />
+                    </Box>
                 </Toolbar>
             </AppBar>
 
@@ -107,105 +153,146 @@ export default function Home() {
                     </Box>
                 )}
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    {activeCards.length === 0 ? (
-                        <Box sx={{ textAlign: 'center', py: 8 }}>
-                            {cards.length === 0 ? (
-                                <Alert severity="info" sx={{ mb: 3 }}>
-                                    <Typography variant="h6" gutterBottom>
-                                        Welcome to Enki Cards!
-                                    </Typography>
-                                    <Typography>
-                                        Start by importing some flashcards to begin learning.
-                                    </Typography>
-                                </Alert>
-                            ) : (
-                                <Alert severity="success" sx={{ mb: 3 }}>
-                                    <Typography variant="h6" gutterBottom>
-                                        Congratulations! 🎉
-                                    </Typography>
-                                    <Typography>
-                                        You've learned all your cards! You can reset your progress to review them again.
-                                    </Typography>
-                                </Alert>
-                            )}
+                {viewMode === 'list' ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
+                        <WordList
+                            cards={cards}
+                            onMarkKnown={markAsKnown}
+                            onMarkUnknown={markAsUnknown}
+                        />
+                    </Box>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        {activeCards.length === 0 ? (
+                            <Box sx={{ textAlign: 'center', py: 8 }}>
+                                {cards.length === 0 ? (
+                                    <Alert severity="info" sx={{ mb: 3 }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            Welcome to Enki Cards!
+                                        </Typography>
+                                        <Typography>
+                                            Start by importing some flashcards to begin learning.
+                                        </Typography>
+                                    </Alert>
+                                ) : (
+                                    <Alert severity="success" sx={{ mb: 3 }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            Congratulations! 🎉
+                                        </Typography>
+                                        <Typography>
+                                            You've learned all your cards! You can reset your progress to review them again.
+                                        </Typography>
+                                    </Alert>
+                                )}
 
-                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => setImportDialogOpen(true)}
-                                >
-                                    Import Cards
-                                </Button>
-                                {cards.length > 0 && (
+                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<CreateIcon />}
+                                        onClick={() => setAddWordDialogOpen(true)}
+                                    >
+                                        Add Word
+                                    </Button>
                                     <Button
                                         variant="outlined"
-                                        startIcon={<RefreshIcon />}
-                                        onClick={resetProgress}
+                                        startIcon={<UploadIcon />}
+                                        onClick={() => setImportDialogOpen(true)}
                                     >
-                                        Reset Progress
+                                        Import JSON
                                     </Button>
-                                )}
+                                    {cards.length > 0 && (
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<RefreshIcon />}
+                                            onClick={resetProgress}
+                                        >
+                                            Reset Progress
+                                        </Button>
+                                    )}
+                                </Box>
                             </Box>
-                        </Box>
-                    ) : (
-                        <>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                <Button
-                                    variant="outlined"
-                                    onClick={handlePrevious}
-                                    disabled={activeCards.length <= 1}
-                                >
-                                    <PrevIcon />
-                                </Button>
+                        ) : (
+                            <>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handlePrevious}
+                                        disabled={activeCards.length <= 1}
+                                    >
+                                        <PrevIcon />
+                                    </Button>
 
-                                <Typography variant="h6" color="text.secondary">
-                                    {currentCardIndex + 1} / {activeCards.length}
-                                </Typography>
+                                    <Typography variant="h6" color="text.secondary">
+                                        {currentCardIndex + 1} / {activeCards.length}
+                                    </Typography>
 
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleNext}
-                                    disabled={activeCards.length <= 1}
-                                >
-                                    <NextIcon />
-                                </Button>
-                            </Box>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleNext}
+                                        disabled={activeCards.length <= 1}
+                                    >
+                                        <NextIcon />
+                                    </Button>
+                                </Box>
 
-                            <FlashCard
-                                card={currentCard}
-                                onMarkKnown={handleMarkKnown}
-                                onMarkUnknown={handleMarkUnknown}
-                            />
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <Button
+                                        variant={isShuffled ? 'contained' : 'outlined'}
+                                        size="small"
+                                        startIcon={<ShuffleIcon />}
+                                        onClick={toggleShuffle}
+                                        sx={{
+                                            fontSize: '0.75rem',
+                                            py: 0.5,
+                                            px: 1.5,
+                                        }}
+                                    >
+                                        {isShuffled ? 'Shuffled' : 'Sequential'}
+                                    </Button>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {isShuffled ? '🔀 Random order' : '📋 Original order'}
+                                    </Typography>
+                                </Box>
 
-                            <Box sx={{ textAlign: 'center', mt: 2, maxWidth: 400 }}>
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    💡 <strong>How to use:</strong>
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                    1. Mark ✓ if you know the word, or click to see translation
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                    2. Use ✗ to review words again later
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                    3. Known words won't appear again
-                                </Typography>
-                            </Box>
-                        </>
-                    )}
-                </Box>
+                                <FlashCard
+                                    card={currentCard}
+                                    onMarkKnown={handleMarkKnown}
+                                    onMarkUnknown={handleMarkUnknown}
+                                />
+
+                                <GameStats 
+                                    cards={cards}
+                                    activeCards={activeCards}
+                                />
+                            </>
+                        )}
+                    </Box>
+                )}
             </Container>
 
-            <Fab
-                color="primary"
-                aria-label="import"
-                sx={{ position: 'fixed', bottom: 16, right: 16 }}
-                onClick={() => setImportDialogOpen(true)}
-            >
-                <AddIcon />
-            </Fab>
+            <Box sx={{ position: 'fixed', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Fab
+                    color="primary"
+                    aria-label="add word"
+                    onClick={() => setAddWordDialogOpen(true)}
+                >
+                    <CreateIcon />
+                </Fab>
+                <Fab
+                    color="secondary"
+                    aria-label="import"
+                    size="small"
+                    onClick={() => setImportDialogOpen(true)}
+                >
+                    <UploadIcon />
+                </Fab>
+            </Box>
+
+            <AddWordDialog
+                open={addWordDialogOpen}
+                onClose={() => setAddWordDialogOpen(false)}
+                onAddWord={handleAddSingleWord}
+            />
 
             <ImportDialog
                 open={importDialogOpen}

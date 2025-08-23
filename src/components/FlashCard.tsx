@@ -34,7 +34,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 400, height: 300 }}>
+    <Box sx={{ width: '100%', maxWidth: 400, height: 450 }}>
       <Card
         onClick={handleCardClick}
         sx={{
