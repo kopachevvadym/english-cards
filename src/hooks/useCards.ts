@@ -3,26 +3,44 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/types/card'
 
+// Constants
+const CARDS_STORAGE_KEY = 'english-cards'
+
 export const useCards = () => {
   const [cards, setCards] = useState<Card[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isShuffled, setIsShuffled] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const savedCards = localStorage.getItem('enki-cards')
+    setMounted(true)
+
+    const savedCards = localStorage.getItem(CARDS_STORAGE_KEY)
     if (savedCards) {
-      const parsedCards = JSON.parse(savedCards).map((card: any) => ({
-        ...card,
-        createdAt: new Date(card.createdAt),
-        lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : undefined,
-      }))
-      setCards(parsedCards)
+      try {
+        const parsedCards = JSON.parse(savedCards).map((card: any) => ({
+          ...card,
+          createdAt: new Date(card.createdAt),
+          lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : undefined,
+        }))
+        setCards(parsedCards)
+      } catch (error) {
+        console.error('Failed to parse saved cards:', error)
+        // Clear corrupted data
+        localStorage.removeItem(CARDS_STORAGE_KEY)
+      }
     }
   }, [])
 
   const saveCards = (newCards: Card[]) => {
     setCards(newCards)
-    localStorage.setItem('enki-cards', JSON.stringify(newCards))
+    if (mounted) {
+      try {
+        localStorage.setItem(CARDS_STORAGE_KEY, JSON.stringify(newCards))
+      } catch (error) {
+        console.error('Failed to save cards to localStorage:', error)
+      }
+    }
   }
 
   const importCards = (jsonData: any[]) => {
@@ -98,7 +116,7 @@ export const useCards = () => {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `enki-cards-progress-${new Date().toISOString().split('T')[0]}.json`
+    link.download = `english-cards-progress-${new Date().toISOString().split('T')[0]}.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

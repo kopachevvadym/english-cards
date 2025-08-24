@@ -1,4 +1,4 @@
-# Enki Cards - Flashcard Learning App
+# English Cards - Flashcard Learning App
 
 A beautiful flashcard learning app built with Next.js and Material-UI, inspired by Anki.
 

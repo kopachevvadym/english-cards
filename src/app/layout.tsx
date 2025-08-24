@@ -5,7 +5,7 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Enki Cards - Flashcard Learning App',
+  title: 'English Cards - Flashcard Learning App',
   description: 'Learn new words with flashcards',
 }
 

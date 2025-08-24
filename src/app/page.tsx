@@ -191,7 +191,7 @@ export default function Home() {
                                 {cards.length === 0 ? (
                                     <Alert severity="info" sx={{ mb: 3 }}>
                                         <Typography variant="h6" gutterBottom>
-                                            Welcome to Enki Cards!
+                                            Welcome to English Cards!
                                         </Typography>
                                         <Typography>
                                             Start by importing some flashcards to begin learning.
