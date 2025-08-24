@@ -13,6 +13,7 @@ import {
     Alert,
     Chip,
     CircularProgress,
+    Tooltip,
 } from '@mui/material'
 import {
     NavigateNext as NextIcon,
@@ -23,6 +24,8 @@ import {
     Upload as UploadIcon,
     Create as CreateIcon,
     Shuffle as ShuffleIcon,
+    CloudDownload as CloudDownloadIcon,
+    CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
@@ -43,6 +46,8 @@ export default function Home() {
         resetProgress,
         isShuffled,
         toggleShuffle,
+        exportProgress,
+        importProgress,
     } = useCards()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
@@ -114,6 +119,25 @@ export default function Home() {
         importCards(jsonData)
     }
 
+    const handleImportProgress = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) {
+                try {
+                    await importProgress(file)
+                    // Show success feedback
+                } catch (error) {
+                    console.error('Failed to import progress:', error)
+                    // Show error feedback
+                }
+            }
+        }
+        input.click()
+    }
+
 
 
     return (
@@ -176,6 +200,26 @@ export default function Home() {
 
                 {viewMode === 'list' ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
+                        {cards.length > 0 && (
+                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<CloudDownloadIcon />}
+                                    onClick={exportProgress}
+                                >
+                                    Export Progress
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<CloudUploadIcon />}
+                                    onClick={handleImportProgress}
+                                >
+                                    Import Progress
+                                </Button>
+                            </Box>
+                        )}
                         <WordList
                             cards={cards}
                             onMarkKnown={markAsKnown}
@@ -222,13 +266,29 @@ export default function Home() {
                                         Import JSON
                                     </Button>
                                     {cards.length > 0 && (
-                                        <Button
-                                            variant="outlined"
-                                            startIcon={<RefreshIcon />}
-                                            onClick={resetProgress}
-                                        >
-                                            Reset Progress
-                                        </Button>
+                                         <>
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<CloudDownloadIcon />}
+                                                onClick={exportProgress}
+                                            >
+                                                Export Progress
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<CloudUploadIcon />}
+                                                onClick={handleImportProgress}
+                                            >
+                                                Import Progress
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<RefreshIcon />}
+                                                onClick={resetProgress}
+                                            >
+                                                Reset Progress
+                                            </Button>
+                                        </>
                                     )}
                                 </Box>
                             </Box>
@@ -292,21 +352,49 @@ export default function Home() {
             </Container>
 
             <Box sx={{ position: 'fixed', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Fab
-                    color="primary"
-                    aria-label="add word"
-                    onClick={() => setAddWordDialogOpen(true)}
-                >
-                    <CreateIcon />
-                </Fab>
-                <Fab
-                    color="secondary"
-                    aria-label="import"
-                    size="small"
-                    onClick={() => setImportDialogOpen(true)}
-                >
-                    <UploadIcon />
-                </Fab>
+                <Tooltip title="Add a new word" placement="left">
+                    <Fab
+                        color="primary"
+                        aria-label="add word"
+                        onClick={() => setAddWordDialogOpen(true)}
+                    >
+                        <CreateIcon />
+                    </Fab>
+                </Tooltip>
+                <Tooltip title="Import words from JSON" placement="left">
+                    <Fab
+                        color="secondary"
+                        aria-label="import"
+                        size="small"
+                        onClick={() => setImportDialogOpen(true)}
+                    >
+                        <UploadIcon />
+                    </Fab>
+                </Tooltip>
+                {cards.length > 0 && (
+                    <>
+                        <Tooltip title="Download your progress as a file" placement="left">
+                            <Fab
+                                color="info"
+                                aria-label="export progress"
+                                size="small"
+                                onClick={exportProgress}
+                            >
+                                <CloudDownloadIcon />
+                            </Fab>
+                        </Tooltip>
+                        <Tooltip title="Upload and restore previous progress" placement="left">
+                            <Fab
+                                color="warning"
+                                aria-label="import progress"
+                                size="small"
+                                onClick={handleImportProgress}
+                            >
+                                <CloudUploadIcon />
+                            </Fab>
+                        </Tooltip>
+                    </>
+                )}
             </Box>
 
             <AddWordDialog
