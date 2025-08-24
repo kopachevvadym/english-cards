@@ -43,18 +43,15 @@ export const useCards = () => {
     }
   }
 
-  const importCards = (jsonData: any[]) => {
-    const newCards: Card[] = jsonData.flatMap((item, index) => {
-      // Handle {"word": "translation"} format
-      return Object.entries(item).map(([word, translation], entryIndex) => ({
-        id: `${Date.now()}-${index}-${entryIndex}`,
-        word: word,
-        translation: translation as string,
-        isKnown: false,
-        createdAt: new Date(),
-      }))
-    })
-    
+  const importCards = (jsonData: Record<string, string>) => {
+    const newCards: Card[] = Object.entries(jsonData).map(([word, translation], index) => ({
+      id: `${Date.now()}-${index}`,
+      word: word,
+      translation: translation,
+      isKnown: false,
+      createdAt: new Date(),
+    }))
+
     const updatedCards = [...cards, ...newCards]
     saveCards(updatedCards)
   }
@@ -167,5 +164,7 @@ export const useCards = () => {
     resetProgress,
     isShuffled,
     toggleShuffle,
+    exportProgress,
+    importProgress,
   }
 }

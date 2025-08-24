@@ -16,7 +16,7 @@ import {
 interface ImportDialogProps {
   open: boolean
   onClose: () => void
-  onImport: (data: any[]) => void
+  onImport: (data: Record<string, string>) => void
 }
 
 export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => {
@@ -26,17 +26,17 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
   const handleImport = () => {
     try {
       const data = JSON.parse(jsonText)
-      if (!Array.isArray(data)) {
-        setError('JSON must be an array of objects')
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+        setError('JSON must be an object with word-translation pairs')
         return
       }
       
-      const isValid = data.every(item => 
-        typeof item === 'object' && item !== null && Object.keys(item).length > 0
+      const isValid = Object.entries(data).every(([key, value]) =>
+        typeof key === 'string' && typeof value === 'string'
       )
       
       if (!isValid) {
-        setError('Each item must be an object with word-translation pairs')
+        setError('All keys and values must be strings (word-translation pairs)')
         return
       }
 
@@ -55,17 +55,13 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
     onClose()
   }
 
-  const exampleJson = `[
-  {
-    "hello": "hola",
-    "goodbye": "adiós",
-    "thank you": "gracias"
-  },
-  {
-    "cat": "gato",
-    "dog": "perro"
-  }
-]`
+  const exampleJson = `{
+  "hello": "hola",
+  "goodbye": "adiós",
+  "thank you": "gracias",
+  "cat": "gato",
+  "dog": "perro"
+}`
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>

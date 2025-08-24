@@ -23,12 +23,10 @@ import {
     Upload as UploadIcon,
     Create as CreateIcon,
     Shuffle as ShuffleIcon,
-    CloudDownload as CloudDownloadIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
 import { AddWordDialog } from '@/components/AddWordDialog'
-import { ProgressDialog } from '@/components/ProgressDialog'
 import { WordList } from '@/components/WordList'
 import { GameStats } from '@/components/GameStats'
 import { useCards } from '@/hooks/useCards'
@@ -112,7 +110,7 @@ export default function Home() {
     }
 
     const handleAddSingleWord = (word: string, translation: string) => {
-        const jsonData = [{ [word]: translation }]
+        const jsonData = { [word]: translation }
         importCards(jsonData)
     }
 
