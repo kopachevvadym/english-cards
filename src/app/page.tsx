@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     Container,
     Typography,
@@ -12,6 +12,7 @@ import {
     LinearProgress,
     Alert,
     Chip,
+    CircularProgress,
 } from '@mui/material'
 import {
     NavigateNext as NextIcon,
@@ -49,6 +50,28 @@ export default function Home() {
     const [importDialogOpen, setImportDialogOpen] = useState(false)
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
+    const [mounted, setMounted] = useState(false)
+
+    // Prevent hydration mismatch
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    // Early return with loading state if not mounted yet
+    if (!mounted) {
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: '100vh'
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        )
+    }
 
     const activeCards = getActiveCards()
     const currentCard = activeCards[currentCardIndex]
