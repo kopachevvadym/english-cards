@@ -10,6 +10,7 @@ export const useCards = () => {
   const [cards, setCards] = useState<Card[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isShuffled, setIsShuffled] = useState(false)
+  const [includeKnownWords, setIncludeKnownWords] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -84,13 +85,20 @@ export const useCards = () => {
   }
 
   const getActiveCards = () => {
-    const activeCards = cards.filter(card => !card.isKnown)
+    const activeCards = includeKnownWords 
+      ? cards 
+      : cards.filter(card => !card.isKnown)
     return isShuffled ? shuffleArray(activeCards) : activeCards
   }
 
   const toggleShuffle = () => {
     setIsShuffled(!isShuffled)
     setCurrentCardIndex(0) // Reset to first card when toggling shuffle
+  }
+
+  const toggleIncludeKnownWords = () => {
+    setIncludeKnownWords(!includeKnownWords)
+    setCurrentCardIndex(0) // Reset to first card when toggling mode
   }
 
   const resetProgress = () => {
@@ -164,6 +172,8 @@ export const useCards = () => {
     resetProgress,
     isShuffled,
     toggleShuffle,
+    includeKnownWords,
+    toggleIncludeKnownWords,
     exportProgress,
     importProgress,
   }

@@ -4,7 +4,6 @@ import {
   Box,
   Paper,
   Typography,
-  Grid,
   Chip,
 } from '@mui/material'
 import {
@@ -18,17 +17,16 @@ import { Card } from '@/types/card'
 interface GameStatsProps {
   cards: Card[]
   activeCards: Card[]
+  includeKnownWords?: boolean
 }
 
-export const GameStats = ({ cards, activeCards }: GameStatsProps) => {
+export const GameStats = ({ cards, activeCards, includeKnownWords = false }: GameStatsProps) => {
   const knownCards = cards.filter(card => card.isKnown)
   const totalCards = cards.length
   const learningCards = activeCards.length
   
   // Calculate statistics
   const completionRate = totalCards > 0 ? Math.round((knownCards.length / totalCards) * 100) : 0
-  const streak = knownCards.length // Simple streak based on known words
-  const efficiency = totalCards > 0 ? Math.round((knownCards.length / totalCards) * 100) : 0
   
   // Determine level based on known words
   const getLevel = (knownCount: number) => {
@@ -44,6 +42,9 @@ export const GameStats = ({ cards, activeCards }: GameStatsProps) => {
   
   // Get motivational message
   const getMotivationalMessage = () => {
+    if (includeKnownWords) {
+      return "📚 Reviewing all words - great for reinforcement!"
+    }
     if (completionRate === 100) return "🎉 Perfect! You've mastered all words!"
     if (completionRate >= 80) return "🔥 Almost there! Keep going!"
     if (completionRate >= 60) return "💪 Great progress! You're doing well!"
@@ -73,7 +74,7 @@ export const GameStats = ({ cards, activeCards }: GameStatsProps) => {
     },
     {
       icon: <SchoolIcon sx={{ color: 'primary.main' }} />,
-      label: 'Learning',
+      label: includeKnownWords ? 'Training' : 'Learning',
       value: `${learningCards}`,
       color: 'primary.main'
     }

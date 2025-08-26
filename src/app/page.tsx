@@ -26,6 +26,7 @@ import {
     Shuffle as ShuffleIcon,
     CloudDownload as CloudDownloadIcon,
     CloudUpload as CloudUploadIcon,
+    School as SchoolIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
@@ -46,6 +47,8 @@ export default function Home() {
         resetProgress,
         isShuffled,
         toggleShuffle,
+        includeKnownWords,
+        toggleIncludeKnownWords,
         exportProgress,
         importProgress,
     } = useCards()
@@ -78,7 +81,8 @@ export default function Home() {
 
     const activeCards = getActiveCards()
     const currentCard = activeCards[currentCardIndex]
-    const progress = cards.length > 0 ? ((cards.length - activeCards.length) / cards.length) * 100 : 0
+    const unknownCards = cards.filter(card => !card.isKnown)
+    const progress = cards.length > 0 ? ((cards.length - unknownCards.length) / cards.length) * 100 : 0
 
     const handleNext = () => {
         if (currentCardIndex < activeCards.length - 1) {
@@ -175,7 +179,7 @@ export default function Home() {
                             List
                         </Button>
                         <Chip
-                            label={`${cards.length - activeCards.length}/${cards.length} learned`}
+                            label={`${cards.length - unknownCards.length}/${cards.length} learned`}
                             color="secondary"
                             variant="outlined"
                             sx={{ color: 'white', borderColor: 'white' }}
@@ -239,13 +243,22 @@ export default function Home() {
                                             Start by importing some flashcards to begin learning.
                                         </Typography>
                                     </Alert>
-                                ) : (
+                                ) : !includeKnownWords ? (
                                     <Alert severity="success" sx={{ mb: 3 }}>
                                         <Typography variant="h6" gutterBottom>
                                             Congratulations! 🎉
                                         </Typography>
                                         <Typography>
-                                            You've learned all your cards! You can reset your progress to review them again.
+                                            You've learned all your cards! You can reset your progress to review them again, or toggle "All Words" to practice known words.
+                                        </Typography>
+                                    </Alert>
+                                ) : (
+                                    <Alert severity="info" sx={{ mb: 3 }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            No cards available
+                                        </Typography>
+                                        <Typography>
+                                            Add some cards to start training.
                                         </Typography>
                                     </Alert>
                                 )}
@@ -316,23 +329,44 @@ export default function Home() {
                                     </Button>
                                 </Box>
 
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                    <Button
-                                        variant={isShuffled ? 'contained' : 'outlined'}
-                                        size="small"
-                                        startIcon={<ShuffleIcon />}
-                                        onClick={toggleShuffle}
-                                        sx={{
-                                            fontSize: '0.75rem',
-                                            py: 0.5,
-                                            px: 1.5,
-                                        }}
-                                    >
-                                        {isShuffled ? 'Shuffled' : 'Sequential'}
-                                    </Button>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {isShuffled ? '🔀 Random order' : '📋 Original order'}
-                                    </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Button
+                                            variant={isShuffled ? 'contained' : 'outlined'}
+                                            size="small"
+                                            startIcon={<ShuffleIcon />}
+                                            onClick={toggleShuffle}
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                py: 0.5,
+                                                px: 1.5,
+                                            }}
+                                        >
+                                            {isShuffled ? 'Shuffled' : 'Sequential'}
+                                        </Button>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {isShuffled ? '🔀 Random order' : '📋 Original order'}
+                                        </Typography>
+                                    </Box>
+                                    
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Button
+                                            variant={includeKnownWords ? 'contained' : 'outlined'}
+                                            size="small"
+                                            startIcon={<SchoolIcon />}
+                                            onClick={toggleIncludeKnownWords}
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                py: 0.5,
+                                                px: 1.5,
+                                            }}
+                                        >
+                                            {includeKnownWords ? 'All Words' : 'Unknown Only'}
+                                        </Button>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {includeKnownWords ? '📚 Review all cards' : '🎯 Focus on learning'}
+                                        </Typography>
+                                    </Box>
                                 </Box>
 
                                 <FlashCard
@@ -344,6 +378,7 @@ export default function Home() {
                                 <GameStats 
                                     cards={cards}
                                     activeCards={activeCards}
+                                    includeKnownWords={includeKnownWords}
                                 />
                             </>
                         )}
