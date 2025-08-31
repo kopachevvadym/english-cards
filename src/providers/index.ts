@@ -17,3 +17,4 @@ export { FallbackHandler } from './FallbackHandler'
 
 // Data providers
 export { LocalStorageProvider } from './LocalStorageProvider'
+export { MongoDBProvider } from './MongoDBProvider'
