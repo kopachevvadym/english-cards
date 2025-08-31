@@ -33,13 +33,17 @@ import {
     School as SchoolIcon,
     Settings as SettingsIcon,
     Add as AddIcon,
+    Storage as StorageIcon,
+    Cloud as CloudIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
 import { AddWordDialog } from '@/components/AddWordDialog'
 import { WordList } from '@/components/WordList'
 import { GameStats } from '@/components/GameStats'
+import { SettingsDialog } from '@/components/SettingsDialog'
 import { useCards } from '@/hooks/useCards'
+import { useSettings } from '@/contexts/SettingsContext'
 
 export default function Home() {
     const {
@@ -58,36 +62,17 @@ export default function Home() {
         exportProgress,
         importProgress,
         deleteCard,
+        updateCard,
     } = useCards()
+
+    const { dataProvider, isValidConfiguration } = useSettings()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
-    const [mounted, setMounted] = useState(false)
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null)
     const settingsOpen = Boolean(settingsAnchorEl)
-
-    // Prevent hydration mismatch
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
-    // Early return with loading state if not mounted yet
-    if (!mounted) {
-        return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: '100vh',
-                    bgcolor: 'background.default'
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        )
-    }
 
     const activeCards = getActiveCards()
     const currentCard = activeCards[currentCardIndex]
@@ -128,9 +113,14 @@ export default function Home() {
         }
     }
 
-    const handleAddSingleWord = (word: string, translation: string) => {
-        const jsonData = { [word]: translation }
-        importCards(jsonData)
+    const handleAddSingleWord = (word: string, translation: string, example?: string, exampleTranslation?: string) => {
+        const cardData = [{
+            word,
+            translation,
+            example,
+            exampleTranslation
+        }]
+        importCards(cardData)
     }
 
     const handleImportProgress = () => {
@@ -178,6 +168,11 @@ export default function Home() {
 
     const handleImportWordsFromSettings = () => {
         setImportDialogOpen(true)
+        setSettingsAnchorEl(null)
+    }
+
+    const handleDataProviderSettings = () => {
+        setSettingsDialogOpen(true)
         setSettingsAnchorEl(null)
     }
 
@@ -246,6 +241,27 @@ export default function Home() {
                                 height: { xs: 24, sm: 32 }
                             }}
                         />
+                        <Tooltip title={`Data Provider: ${dataProvider === 'localhost' ? 'Local Storage' : 'MongoDB'}`}>
+                            <Chip
+                                icon={dataProvider === 'localhost' ? 
+                                    <StorageIcon sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }} /> : 
+                                    <CloudIcon sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }} />
+                                }
+                                label={dataProvider === 'localhost' ? 'Local' : 'Cloud'}
+                                color={isValidConfiguration(dataProvider) ? 'success' : 'warning'}
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                    color: 'white',
+                                    borderColor: 'white',
+                                    fontSize: { xs: '0.6rem', sm: '0.7rem' },
+                                    height: { xs: 24, sm: 32 },
+                                    '& .MuiChip-icon': {
+                                        color: 'white'
+                                    }
+                                }}
+                            />
+                        </Tooltip>
                         <IconButton
                             onClick={handleSettingsClick}
                             sx={{
@@ -292,6 +308,7 @@ export default function Home() {
                             onMarkKnown={markAsKnown}
                             onMarkUnknown={markAsUnknown}
                             onDeleteCard={deleteCard}
+                            onUpdateCard={updateCard}
                         />
                     </Box>
                 ) : (
@@ -518,6 +535,11 @@ export default function Home() {
                 onImport={importCards}
             />
 
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onClose={() => setSettingsDialogOpen(false)}
+            />
+
             {/* Settings Menu */}
             <Menu
                 anchorEl={settingsAnchorEl}
@@ -549,6 +571,20 @@ export default function Home() {
                 <MenuItem onClick={handleImportWordsFromSettings}>
                     <UploadIcon sx={{ mr: 2, color: 'secondary.main' }} />
                     Import Words
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleDataProviderSettings}>
+                    {dataProvider === 'localhost' ? 
+                        <StorageIcon sx={{ mr: 2, color: 'info.main' }} /> : 
+                        <CloudIcon sx={{ mr: 2, color: 'info.main' }} />
+                    }
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <Typography variant="body2">Data Provider</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {dataProvider === 'localhost' ? 'Local Storage' : 'MongoDB'} 
+                            {!isValidConfiguration(dataProvider) && ' (needs setup)'}
+                        </Typography>
+                    </Box>
                 </MenuItem>
                 {cards.length > 0 && [
                     <Divider key="divider1" />,

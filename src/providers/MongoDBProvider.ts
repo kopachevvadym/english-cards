@@ -1,6 +1,6 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb'
 import { Card } from '../types/card'
-import { IDataProvider, MongoDBConfig, DataProviderError, ProviderError } from './types'
+import { IDataProvider, IDataProviderWithStatus, MongoDBConfig, DataProviderError, ProviderError, ProviderStatus, ProviderStatusInfo } from './types'
 
 /**
  * MongoDB document interface for cards
@@ -20,12 +20,17 @@ interface CardDocument {
 /**
  * MongoDB provider implementation
  */
-export class MongoDBProvider implements IDataProvider {
+export class MongoDBProvider implements IDataProviderWithStatus {
   private client: MongoClient | null = null
   private db: Db | null = null
   private collection: Collection<CardDocument> | null = null
   private isConnected = false
   private connectionPromise: Promise<void> | null = null
+  private currentStatus: ProviderStatus = ProviderStatus.DISCONNECTED
+  private lastError: ProviderError | null = null
+  private connectionStartTime: number | null = null
+  
+  public onStatusChange?: (status: ProviderStatusInfo) => void
 
   constructor(private config: MongoDBConfig) {
     this.validateConfig()
@@ -81,6 +86,9 @@ export class MongoDBProvider implements IDataProvider {
    * Performs the actual connection to MongoDB
    */
   private async performConnection(): Promise<void> {
+    this.connectionStartTime = Date.now()
+    this.updateStatus(ProviderStatus.CONNECTING, 'Establishing connection...')
+
     try {
       this.client = new MongoClient(this.config.connectionString, {
         serverSelectionTimeoutMS: 5000, // 5 second timeout
@@ -101,16 +109,21 @@ export class MongoDBProvider implements IDataProvider {
       
       this.isConnected = true
       this.connectionPromise = null
+      
+      this.updateStatus(ProviderStatus.CONNECTED, 'Connected successfully')
     } catch (error) {
       this.connectionPromise = null
       this.isConnected = false
       
-      throw new ProviderError(
+      const providerError = new ProviderError(
         DataProviderError.CONNECTION_FAILED,
         `Failed to connect to MongoDB: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'mongodb',
         error instanceof Error ? error : undefined
       )
+      
+      this.updateStatus(ProviderStatus.ERROR, providerError.message, providerError)
+      throw providerError
     }
   }
 
@@ -125,6 +138,9 @@ export class MongoDBProvider implements IDataProvider {
       this.collection = null
       this.isConnected = false
       this.connectionPromise = null
+      this.connectionStartTime = null
+      
+      this.updateStatus(ProviderStatus.DISCONNECTED, 'Disconnected')
     }
   }
 
@@ -365,11 +381,150 @@ export class MongoDBProvider implements IDataProvider {
   /**
    * Gets current configuration (without sensitive data)
    */
-  getConfig(): Omit<MongoDBConfig, 'connectionString'> {
+  getConfig(): { databaseName: string; collectionName: string; connectionString: string } {
     return {
       databaseName: this.config.databaseName,
       collectionName: this.config.collectionName,
       connectionString: this.config.connectionString ? '[CONFIGURED]' : '[NOT CONFIGURED]'
+    }
+  }
+
+  /**
+   * Updates the current status and notifies listeners
+   */
+  private updateStatus(status: ProviderStatus, message?: string, error?: ProviderError): void {
+    this.currentStatus = status
+    if (error) {
+      this.lastError = error
+    }
+
+    const statusInfo: ProviderStatusInfo = {
+      status,
+      message,
+      lastChecked: new Date(),
+      connectionTime: this.connectionStartTime ? Date.now() - this.connectionStartTime : undefined,
+      error
+    }
+
+    if (this.onStatusChange) {
+      this.onStatusChange(statusInfo)
+    }
+  }
+
+  /**
+   * Gets the current provider status
+   */
+  async getStatus(): Promise<ProviderStatusInfo> {
+    let status = this.currentStatus
+    let message = ''
+
+    try {
+      if (this.isConnected && this.client) {
+        // Test the connection with a ping
+        await this.client.db('admin').command({ ping: 1 })
+        status = ProviderStatus.CONNECTED
+        message = 'Connected and operational'
+      } else {
+        status = ProviderStatus.DISCONNECTED
+        message = 'Not connected'
+      }
+    } catch (error) {
+      status = ProviderStatus.ERROR
+      message = `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      this.lastError = new ProviderError(
+        DataProviderError.CONNECTION_FAILED,
+        message,
+        'mongodb',
+        error instanceof Error ? error : undefined
+      )
+    }
+
+    this.currentStatus = status
+
+    return {
+      status,
+      message,
+      lastChecked: new Date(),
+      connectionTime: this.connectionStartTime ? Date.now() - this.connectionStartTime : undefined,
+      error: this.lastError || undefined
+    }
+  }
+
+  /**
+   * Tests the connection without changing the current connection state
+   */
+  async testConnection(): Promise<boolean> {
+    this.updateStatus(ProviderStatus.CONNECTING, 'Testing connection...')
+
+    try {
+      // Create a temporary client for testing
+      const testClient = new MongoClient(this.config.connectionString, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 10000,
+      })
+
+      await testClient.connect()
+      
+      // Test the connection
+      await testClient.db('admin').command({ ping: 1 })
+      
+      // Test database access
+      const testDb = testClient.db(this.config.databaseName)
+      await testDb.listCollections().toArray()
+      
+      await testClient.close()
+      
+      this.updateStatus(
+        this.isConnected ? ProviderStatus.CONNECTED : ProviderStatus.DISCONNECTED,
+        'Connection test successful'
+      )
+      
+      return true
+    } catch (error) {
+      const providerError = new ProviderError(
+        DataProviderError.CONNECTION_FAILED,
+        `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'mongodb',
+        error instanceof Error ? error : undefined
+      )
+      
+      this.updateStatus(ProviderStatus.ERROR, providerError.message, providerError)
+      return false
+    }
+  }
+
+  /**
+   * Attempts to reconnect to MongoDB
+   */
+  async reconnect(): Promise<void> {
+    this.updateStatus(ProviderStatus.CONNECTING, 'Reconnecting...')
+
+    try {
+      // Disconnect first if connected
+      if (this.isConnected) {
+        await this.disconnect()
+      }
+
+      // Clear any existing connection promise
+      this.connectionPromise = null
+      
+      // Attempt to connect
+      await this.connect()
+      
+      this.updateStatus(ProviderStatus.CONNECTED, 'Reconnected successfully')
+    } catch (error) {
+      const providerError = error instanceof ProviderError 
+        ? error 
+        : new ProviderError(
+            DataProviderError.CONNECTION_FAILED,
+            `Reconnection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'mongodb',
+            error instanceof Error ? error : undefined
+          )
+      
+      this.updateStatus(ProviderStatus.ERROR, providerError.message, providerError)
+      throw providerError
     }
   }
 }

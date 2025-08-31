@@ -1,13 +1,16 @@
 import { Card } from '../types/card'
-import { IDataProvider, ProviderError, DataProviderError } from './types'
+import { IDataProvider, IDataProviderWithStatus, ProviderError, DataProviderError, ProviderStatus, ProviderStatusInfo } from './types'
 
 /**
  * LocalStorage implementation of the IDataProvider interface
  * Handles all card data operations using browser localStorage
  */
-export class LocalStorageProvider implements IDataProvider {
+export class LocalStorageProvider implements IDataProviderWithStatus {
   private readonly storageKey = 'english-cards'
   private readonly providerName = 'localhost'
+  private currentStatus: ProviderStatus = ProviderStatus.DISCONNECTED
+  
+  public onStatusChange?: (status: ProviderStatusInfo) => void
 
   /**
    * Retrieve all cards from localStorage
@@ -217,12 +220,17 @@ export class LocalStorageProvider implements IDataProvider {
   async connect(): Promise<void> {
     const available = await this.isAvailable()
     if (!available) {
-      throw new ProviderError(
+      const error = new ProviderError(
         DataProviderError.PROVIDER_UNAVAILABLE,
         'localStorage is not available in this environment',
         this.providerName
       )
+      
+      this.updateStatus(ProviderStatus.UNAVAILABLE, error.message, error)
+      throw error
     }
+    
+    this.updateStatus(ProviderStatus.CONNECTED, 'localStorage connected successfully')
   }
 
   /**
@@ -230,6 +238,7 @@ export class LocalStorageProvider implements IDataProvider {
    */
   async disconnect(): Promise<void> {
     // No cleanup needed for localStorage
+    this.updateStatus(ProviderStatus.DISCONNECTED, 'localStorage disconnected')
   }
 
   /**
@@ -301,5 +310,99 @@ export class LocalStorageProvider implements IDataProvider {
     // Validate the transformed card
     this.validateCard(card)
     return card
+  }
+
+  /**
+   * Updates the current status and notifies listeners
+   */
+  private updateStatus(status: ProviderStatus, message?: string, error?: ProviderError): void {
+    this.currentStatus = status
+
+    const statusInfo: ProviderStatusInfo = {
+      status,
+      message,
+      lastChecked: new Date(),
+      error
+    }
+
+    if (this.onStatusChange) {
+      this.onStatusChange(statusInfo)
+    }
+  }
+
+  /**
+   * Gets the current provider status
+   */
+  async getStatus(): Promise<ProviderStatusInfo> {
+    const isAvailable = await this.isAvailable()
+    
+    const status = isAvailable ? ProviderStatus.CONNECTED : ProviderStatus.UNAVAILABLE
+    const message = isAvailable ? 'localStorage is available and operational' : 'localStorage is not available'
+
+    this.currentStatus = status
+
+    return {
+      status,
+      message,
+      lastChecked: new Date(),
+      error: isAvailable ? undefined : new ProviderError(
+        DataProviderError.PROVIDER_UNAVAILABLE,
+        'localStorage is not available in this environment',
+        this.providerName
+      )
+    }
+  }
+
+  /**
+   * Tests the localStorage connection
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      const testKey = '__localStorage_connection_test__'
+      const testValue = 'test_' + Date.now()
+      
+      localStorage.setItem(testKey, testValue)
+      const retrieved = localStorage.getItem(testKey)
+      localStorage.removeItem(testKey)
+      
+      const success = retrieved === testValue
+      
+      this.updateStatus(
+        success ? ProviderStatus.CONNECTED : ProviderStatus.ERROR,
+        success ? 'localStorage connection test successful' : 'localStorage connection test failed'
+      )
+      
+      return success
+    } catch (error) {
+      const providerError = new ProviderError(
+        DataProviderError.CONNECTION_FAILED,
+        `localStorage connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        this.providerName,
+        error instanceof Error ? error : undefined
+      )
+      
+      this.updateStatus(ProviderStatus.ERROR, providerError.message, providerError)
+      return false
+    }
+  }
+
+  /**
+   * Attempts to reconnect to localStorage (essentially just tests availability)
+   */
+  async reconnect(): Promise<void> {
+    const isAvailable = await this.testConnection()
+    
+    if (!isAvailable) {
+      const error = new ProviderError(
+        DataProviderError.PROVIDER_UNAVAILABLE,
+        'localStorage is not available in this environment',
+        this.providerName
+      )
+      
+      this.updateStatus(ProviderStatus.UNAVAILABLE, error.message, error)
+      throw error
+    }
+    
+    this.updateStatus(ProviderStatus.CONNECTED, 'localStorage reconnected successfully')
   }
 }

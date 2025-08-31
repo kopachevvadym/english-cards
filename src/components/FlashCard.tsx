@@ -84,6 +84,24 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
             >
               {card.word}
             </Typography>
+            
+            {card.example && (
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  opacity: 0.9, 
+                  mt: { xs: 1, sm: 2 }, 
+                  mb: { xs: 1, sm: 2 },
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                  px: 2
+                }}
+              >
+                "{card.example}"
+              </Typography>
+            )}
+            
             <Typography 
               variant="body2" 
               sx={{ 
@@ -178,6 +196,24 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
             >
               {card.translation}
             </Typography>
+            
+            {card.exampleTranslation && (
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  opacity: 0.9, 
+                  mt: { xs: 1, sm: 2 }, 
+                  mb: { xs: 1, sm: 1 },
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                  px: 2
+                }}
+              >
+                "{card.exampleTranslation}"
+              </Typography>
+            )}
+            
             <Typography 
               variant="body2" 
               sx={{ 

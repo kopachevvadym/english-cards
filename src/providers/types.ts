@@ -65,6 +65,41 @@ export interface ProviderConfig {
 }
 
 /**
+ * Provider status information
+ */
+export enum ProviderStatus {
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  ERROR = 'error',
+  UNAVAILABLE = 'unavailable'
+}
+
+/**
+ * Provider status details
+ */
+export interface ProviderStatusInfo {
+  status: ProviderStatus
+  message?: string
+  lastChecked: Date
+  connectionTime?: number
+  error?: ProviderError
+}
+
+/**
+ * Extended data provider interface with status management
+ */
+export interface IDataProviderWithStatus extends IDataProvider {
+  // Status management
+  getStatus(): Promise<ProviderStatusInfo>
+  testConnection(): Promise<boolean>
+  reconnect(): Promise<void>
+  
+  // Status events
+  onStatusChange?: (status: ProviderStatusInfo) => void
+}
+
+/**
  * Application settings interface
  */
 export interface AppSettings {

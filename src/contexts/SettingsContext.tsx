@@ -81,18 +81,22 @@ interface SettingsProviderProps {
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [storageAvailable] = useState(isStorageAvailable())
+  const [storageAvailable, setStorageAvailable] = useState(false)
 
-  // Load settings from localStorage on mount
+  // Load settings from localStorage on mount (client-side only)
   useEffect(() => {
-    if (storageAvailable) {
+    // Check storage availability on client-side only
+    const available = isStorageAvailable()
+    setStorageAvailable(available)
+    
+    if (available) {
       const result = loadSettings(DEFAULT_SETTINGS)
       if (result.success && result.data) {
         setSettings(result.data)
       }
     }
     setIsInitialized(true)
-  }, [storageAvailable])
+  }, [])
 
   // Save settings to localStorage whenever they change
   useEffect(() => {

@@ -20,22 +20,27 @@ import {
   Check as CheckIcon,
   Undo as UndoIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material'
 import { Card } from '@/types/card'
+import { EditWordDialog } from './EditWordDialog'
 
 interface WordListProps {
   cards: Card[]
   onMarkKnown: (cardId: string) => void
   onMarkUnknown: (cardId: string) => void
   onDeleteCard: (cardId: string) => void
+  onUpdateCard: (updatedCard: Card) => void
 }
 
-export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: WordListProps) => {
+export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUpdateCard }: WordListProps) => {
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number
     mouseY: number
     cardId: string
   } | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [cardToEdit, setCardToEdit] = useState<Card | null>(null)
 
   const handleToggleKnown = (card: Card) => {
     if (card.isKnown) {
@@ -67,6 +72,28 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: Wo
       onDeleteCard(contextMenu.cardId)
       handleContextMenuClose()
     }
+  }
+
+  const handleEditCard = () => {
+    if (contextMenu) {
+      const card = cards.find(c => c.id === contextMenu.cardId)
+      if (card) {
+        setCardToEdit(card)
+        setEditDialogOpen(true)
+      }
+      handleContextMenuClose()
+    }
+  }
+
+  const handleUpdateCard = (updatedCard: Card) => {
+    onUpdateCard(updatedCard)
+    setEditDialogOpen(false)
+    setCardToEdit(null)
+  }
+
+  const handleEditDialogClose = () => {
+    setEditDialogOpen(false)
+    setCardToEdit(null)
   }
 
   return (
@@ -148,6 +175,27 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: Wo
                     >
                       {card.translation}
                     </Typography>
+                    
+                    {card.example && (
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ 
+                          mt: 1,
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          fontStyle: 'italic',
+                          opacity: 0.8,
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        Example: "{card.example}"
+                        {card.exampleTranslation && (
+                          <span style={{ display: 'block', marginTop: '0.25rem' }}>
+                            → "{card.exampleTranslation}"
+                          </span>
+                        )}
+                      </Typography>
+                    )}
                   </Box>
                   
                   <Box sx={{ 
@@ -263,6 +311,15 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: Wo
           }
         }}
       >
+        <MenuItem onClick={handleEditCard}>
+          <ListItemIcon>
+            <EditIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Edit Word" 
+            primaryTypographyProps={{ fontSize: '0.875rem' }}
+          />
+        </MenuItem>
         <MenuItem onClick={handleDeleteCard} sx={{ color: 'error.main' }}>
           <ListItemIcon>
             <DeleteIcon sx={{ color: 'error.main', fontSize: '1.2rem' }} />
@@ -273,6 +330,14 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: Wo
           />
         </MenuItem>
       </Menu>
+
+      {/* Edit Word Dialog */}
+      <EditWordDialog
+        open={editDialogOpen}
+        card={cardToEdit}
+        onClose={handleEditDialogClose}
+        onUpdateWord={handleUpdateCard}
+      />
     </Box>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -12,21 +12,34 @@ import {
   Box,
   Alert,
 } from '@mui/material'
+import { Card } from '@/types/card'
 
-interface AddWordDialogProps {
+interface EditWordDialogProps {
   open: boolean
+  card: Card | null
   onClose: () => void
-  onAddWord: (word: string, translation: string, example?: string, exampleTranslation?: string) => void
+  onUpdateWord: (updatedCard: Card) => void
 }
 
-export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) => {
+export const EditWordDialog = ({ open, card, onClose, onUpdateWord }: EditWordDialogProps) => {
   const [word, setWord] = useState('')
   const [translation, setTranslation] = useState('')
   const [example, setExample] = useState('')
   const [exampleTranslation, setExampleTranslation] = useState('')
   const [error, setError] = useState('')
 
-  const handleAdd = () => {
+  // Update form fields when card changes
+  useEffect(() => {
+    if (card) {
+      setWord(card.word)
+      setTranslation(card.translation)
+      setExample(card.example || '')
+      setExampleTranslation(card.exampleTranslation || '')
+      setError('')
+    }
+  }, [card])
+
+  const handleUpdate = () => {
     if (!word.trim()) {
       setError('Please enter a word')
       return
@@ -35,19 +48,21 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
       setError('Please enter a translation')
       return
     }
+    if (!card) {
+      setError('No card selected for editing')
+      return
+    }
 
-    onAddWord(
-      word.trim(), 
-      translation.trim(),
-      example.trim() || undefined,
-      exampleTranslation.trim() || undefined
-    )
-    setWord('')
-    setTranslation('')
-    setExample('')
-    setExampleTranslation('')
-    setError('')
-    onClose()
+    const updatedCard: Card = {
+      ...card,
+      word: word.trim(),
+      translation: translation.trim(),
+      example: example.trim() || undefined,
+      exampleTranslation: exampleTranslation.trim() || undefined,
+    }
+
+    onUpdateWord(updatedCard)
+    handleClose()
   }
 
   const handleClose = () => {
@@ -59,19 +74,20 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
     onClose()
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && word.trim() && translation.trim()) {
-      handleAdd()
+      e.preventDefault()
+      handleUpdate()
     }
   }
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add New Word</DialogTitle>
+      <DialogTitle>Edit Word</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            Add a single word-translation pair to your flashcards.
+            Update the word and its translation.
           </Typography>
           
           <TextField
@@ -79,7 +95,7 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
             label="Word"
             value={word}
             onChange={(e) => setWord(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="e.g., hello"
             variant="outlined"
             sx={{ mb: 2, mt: 2 }}
@@ -91,7 +107,7 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
             label="Translation"
             value={translation}
             onChange={(e) => setTranslation(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="e.g., hola"
             variant="outlined"
             sx={{ mb: 2 }}
@@ -132,7 +148,7 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
               💡 Tip:
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Press Enter to quickly add the word, or use the Import JSON option for multiple words at once. Examples help provide context for better learning.
+              Press Enter to quickly save changes. All fields except word and translation are optional.
             </Typography>
           </Box>
         </Box>
@@ -140,11 +156,11 @@ export const AddWordDialog = ({ open, onClose, onAddWord }: AddWordDialogProps) 
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button 
-          onClick={handleAdd} 
+          onClick={handleUpdate} 
           variant="contained" 
           disabled={!word.trim() || !translation.trim()}
         >
-          Add Word
+          Update Word
         </Button>
       </DialogActions>
     </Dialog>
