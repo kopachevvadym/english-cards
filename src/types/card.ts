@@ -5,4 +5,6 @@ export interface Card {
   isKnown: boolean
   createdAt: Date
   lastReviewed?: Date
+  example?: string
+  exampleTranslation?: string
 }
