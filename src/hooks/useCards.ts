@@ -13,6 +13,7 @@ export const useCards = () => {
   const [isShuffled, setIsShuffled] = useState(false)
   const [includeKnownWords, setIncludeKnownWords] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [shuffledOrder, setShuffledOrder] = useState<Card[]>([]) // Static shuffled order
   
   // Loading states for provider operations
   const [isLoading, setIsLoading] = useState(false)
@@ -20,6 +21,16 @@ export const useCards = () => {
   const [error, setError] = useState<string | null>(null)
 
   const { dataProvider, mongoConfig, isValidConfiguration } = useSettings()
+
+  // Shuffle function - defined early to avoid initialization issues
+  const shuffleArray = useCallback((array: Card[]) => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }, [])
 
   // Initialize DataProviderManager with error handling
   const providerManager = useMemo(() => {
@@ -58,6 +69,14 @@ export const useCards = () => {
     try {
       const loadedCards = await providerManager.getCards()
       setCards(loadedCards)
+      
+      // Initialize shuffled order if currently shuffled
+      if (isShuffled) {
+        const activeCards = includeKnownWords 
+          ? loadedCards 
+          : loadedCards.filter(card => !card.isKnown)
+        setShuffledOrder(shuffleArray(activeCards))
+      }
     } catch (error) {
       console.error('Failed to load cards:', error)
       const errorMessage = error instanceof ProviderError 
@@ -67,7 +86,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [mounted, providerManager])
+  }, [mounted, providerManager, isShuffled, includeKnownWords, shuffleArray])
 
   // Switch provider when dataProvider setting changes
   useEffect(() => {
@@ -130,6 +149,14 @@ export const useCards = () => {
     try {
       await providerManager.saveCards(newCards)
       setCards(newCards)
+      
+      // Update shuffled order if currently shuffled
+      if (isShuffled) {
+        const activeCards = includeKnownWords 
+          ? newCards 
+          : newCards.filter(card => !card.isKnown)
+        setShuffledOrder(shuffleArray(activeCards))
+      }
     } catch (error) {
       console.error('Failed to save cards:', error)
       const errorMessage = error instanceof ProviderError 
@@ -140,7 +167,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager])
+  }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
 
   const importCards = useCallback(async (jsonData: Record<string, string> | Array<{word: string, translation: string, example?: string, exampleTranslation?: string}>) => {
     const timestamp = new Date().getTime()
@@ -190,31 +217,50 @@ export const useCards = () => {
     await saveCards(updatedCards)
   }, [cards, saveCards])
 
-  const shuffleArray = useCallback((array: Card[]) => {
-    const shuffled = [...array]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    return shuffled
-  }, [])
-
   const getActiveCards = useCallback(() => {
     const activeCards = includeKnownWords 
       ? cards 
       : cards.filter(card => !card.isKnown)
-    return isShuffled ? shuffleArray(activeCards) : activeCards
-  }, [cards, includeKnownWords, isShuffled, shuffleArray])
+    
+    if (isShuffled) {
+      // Use the static shuffled order, but filter it to match current active cards
+      return shuffledOrder.filter(card => 
+        activeCards.some(activeCard => activeCard.id === card.id)
+      )
+    }
+    
+    return activeCards
+  }, [cards, includeKnownWords, isShuffled, shuffledOrder])
 
   const toggleShuffle = useCallback(() => {
-    setIsShuffled(!isShuffled)
+    const newShuffledState = !isShuffled
+    setIsShuffled(newShuffledState)
+    
+    if (newShuffledState) {
+      // Create a new shuffled order when enabling shuffle
+      const activeCards = includeKnownWords 
+        ? cards 
+        : cards.filter(card => !card.isKnown)
+      setShuffledOrder(shuffleArray(activeCards))
+    }
+    
     setCurrentCardIndex(0) // Reset to first card when toggling shuffle
-  }, [isShuffled])
+  }, [isShuffled, cards, includeKnownWords, shuffleArray])
 
   const toggleIncludeKnownWords = useCallback(() => {
-    setIncludeKnownWords(!includeKnownWords)
+    const newIncludeKnownWords = !includeKnownWords
+    setIncludeKnownWords(newIncludeKnownWords)
+    
+    // Update shuffled order if currently shuffled
+    if (isShuffled) {
+      const activeCards = newIncludeKnownWords 
+        ? cards 
+        : cards.filter(card => !card.isKnown)
+      setShuffledOrder(shuffleArray(activeCards))
+    }
+    
     setCurrentCardIndex(0) // Reset to first card when toggling mode
-  }, [includeKnownWords])
+  }, [includeKnownWords, isShuffled, cards, shuffleArray])
 
   const resetProgress = useCallback(async () => {
     const resetCards = cards.map(card => ({ ...card, isKnown: false }))
@@ -287,6 +333,11 @@ export const useCards = () => {
       const updatedCards = cards.filter(card => card.id !== cardId)
       setCards(updatedCards)
       
+      // Update shuffled order if currently shuffled
+      if (isShuffled) {
+        setShuffledOrder(prev => prev.filter(card => card.id !== cardId))
+      }
+      
       // Adjust current card index if necessary
       // Calculate active cards based on updated cards
       const activeCards = includeKnownWords 
@@ -308,7 +359,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager, cards, currentCardIndex, includeKnownWords])
+  }, [providerManager, cards, currentCardIndex, includeKnownWords, isShuffled])
 
   // Add a new card using the provider
   const addCard = useCallback(async (cardData: Omit<Card, 'id' | 'createdAt'>) => {
@@ -323,7 +374,19 @@ export const useCards = () => {
 
     try {
       await providerManager.saveCard(newCard)
-      setCards(prevCards => [...prevCards, newCard])
+      setCards(prevCards => {
+        const updatedCards = [...prevCards, newCard]
+        
+        // Update shuffled order if currently shuffled
+        if (isShuffled) {
+          const activeCards = includeKnownWords 
+            ? updatedCards 
+            : updatedCards.filter(card => !card.isKnown)
+          setShuffledOrder(shuffleArray(activeCards))
+        }
+        
+        return updatedCards
+      })
       return newCard
     } catch (error) {
       console.error('Failed to add card:', error)
@@ -335,7 +398,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager])
+  }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
 
   // Update an existing card using the provider
   const updateCard = useCallback(async (updatedCard: Card) => {
@@ -344,11 +407,22 @@ export const useCards = () => {
 
     try {
       await providerManager.updateCard(updatedCard)
-      setCards(prevCards => 
-        prevCards.map(card => 
+      setCards(prevCards => {
+        const newCards = prevCards.map(card => 
           card.id === updatedCard.id ? updatedCard : card
         )
-      )
+        
+        // Update shuffled order if currently shuffled
+        if (isShuffled) {
+          setShuffledOrder(prev => 
+            prev.map(card => 
+              card.id === updatedCard.id ? updatedCard : card
+            )
+          )
+        }
+        
+        return newCards
+      })
       return updatedCard
     } catch (error) {
       console.error('Failed to update card:', error)
@@ -360,7 +434,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager])
+  }, [providerManager, isShuffled])
 
   // Add a function to manually refresh cards from provider
   const refreshCards = useCallback(async () => {
