@@ -22,6 +22,10 @@ export interface SettingsContextType {
   mongoConfig: MongoDBConfig
   setMongoConfig: (config: MongoDBConfig) => void
   
+  // UI preferences
+  showTranslationFirst: boolean
+  setShowTranslationFirst: (show: boolean) => void
+  
   // Full settings object
   settings: AppSettings
   updateSettings: (settings: Partial<AppSettings>) => void
@@ -60,7 +64,8 @@ const DEFAULT_SETTINGS: AppSettings = {
       isDefault: false,
       config: DEFAULT_MONGO_CONFIG
     }
-  }
+  },
+  showTranslationFirst: false
 }
 
 /**
@@ -128,6 +133,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }))
   }
 
+  const setShowTranslationFirst = (show: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      showTranslationFirst: show
+    }))
+  }
+
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({
       ...prev,
@@ -153,6 +165,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     setDataProvider,
     mongoConfig: settings.providers.mongodb.config,
     setMongoConfig,
+    showTranslationFirst: settings.showTranslationFirst,
+    setShowTranslationFirst,
     settings,
     updateSettings,
     isValidConfiguration,

@@ -159,6 +159,7 @@ describe('settingsValidation', () => {
   describe('validateProviderConfiguration', () => {
     const validSettings: AppSettings = {
       selectedProvider: 'localhost',
+      showTranslationFirst: false,
       providers: {
         localhost: {
           name: 'localhost',
@@ -215,6 +216,7 @@ describe('settingsValidation', () => {
   describe('validateAppSettings', () => {
     const validSettings: AppSettings = {
       selectedProvider: 'localhost',
+      showTranslationFirst: false,
       providers: {
         localhost: {
           name: 'localhost',

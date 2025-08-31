@@ -46,6 +46,7 @@ export function loadSettings(defaultSettings: AppSettings): StorageResult<AppSet
     // Merge with defaults to ensure all required fields exist
     const mergedSettings: AppSettings = {
       selectedProvider: parsed.selectedProvider || defaultSettings.selectedProvider,
+      showTranslationFirst: parsed.showTranslationFirst ?? defaultSettings.showTranslationFirst,
       providers: {
         localhost: {
           ...defaultSettings.providers.localhost,

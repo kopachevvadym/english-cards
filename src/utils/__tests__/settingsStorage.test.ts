@@ -22,6 +22,7 @@ Object.defineProperty(window, 'localStorage', {
 describe('settingsStorage', () => {
   const defaultSettings: AppSettings = {
     selectedProvider: 'localhost',
+    showTranslationFirst: false,
     providers: {
       localhost: {
         name: 'localhost',
@@ -59,6 +60,7 @@ describe('settingsStorage', () => {
     it('should load and merge valid stored settings', () => {
       const storedSettings: AppSettings = {
         selectedProvider: 'mongodb',
+        showTranslationFirst: true,
         providers: {
           localhost: {
             name: 'localhost',
@@ -140,6 +142,7 @@ describe('settingsStorage', () => {
     it('should save valid settings to localStorage', () => {
       const validSettings: AppSettings = {
         selectedProvider: 'mongodb',
+        showTranslationFirst: false,
         providers: {
           localhost: {
             name: 'localhost',
@@ -171,6 +174,7 @@ describe('settingsStorage', () => {
     it('should reject invalid settings', () => {
       const invalidSettings: AppSettings = {
         selectedProvider: 'mongodb',
+        showTranslationFirst: false,
         providers: {
           localhost: {
             name: 'localhost',

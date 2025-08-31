@@ -35,11 +35,11 @@ export interface IDataProvider {
   updateCard(card: Card): Promise<Card>
   deleteCard(cardId: string): Promise<void>
   saveCards(cards: Card[]): Promise<Card[]>
-  
+
   // Provider metadata
   getProviderName(): string
   isAvailable(): Promise<boolean>
-  
+
   // Connection management
   connect(): Promise<void>
   disconnect(): Promise<void>
@@ -94,7 +94,7 @@ export interface IDataProviderWithStatus extends IDataProvider {
   getStatus(): Promise<ProviderStatusInfo>
   testConnection(): Promise<boolean>
   reconnect(): Promise<void>
-  
+
   // Status events
   onStatusChange?: (status: ProviderStatusInfo) => void
 }
@@ -110,4 +110,6 @@ export interface AppSettings {
       config: MongoDBConfig
     }
   }
+  // UI preferences
+  showTranslationFirst: boolean
 }

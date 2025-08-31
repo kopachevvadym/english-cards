@@ -25,6 +25,7 @@ import {
   CardContent,
   Tab,
   Tabs,
+  Switch,
 } from '@mui/material'
 import {
   Storage as StorageIcon,
@@ -37,6 +38,7 @@ import {
   SwapHoriz as SwapHorizIcon,
   Backup as BackupIcon,
   Settings as SettingsIcon,
+  Translate as TranslateIcon,
 } from '@mui/icons-material'
 import { useSettings, DataProviderType } from '../contexts/SettingsContext'
 import { MongoDBConfig, ProviderStatusInfo, ProviderStatus } from '../providers/types'
@@ -64,6 +66,8 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
     setDataProvider,
     mongoConfig,
     setMongoConfig,
+    showTranslationFirst,
+    setShowTranslationFirst,
     isValidConfiguration,
     resetToDefaults,
     isStorageAvailable
@@ -586,6 +590,38 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
         )}
       </Box>
 
+      {/* UI Preferences */}
+      <Box sx={{ mt: 3 }}>
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <TranslateIcon />
+          UI Preferences
+        </Typography>
+        
+        <Card variant="outlined" sx={{ p: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showTranslationFirst}
+                onChange={(e) => setShowTranslationFirst(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="subtitle2">
+                  Show Translation First
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Display the translation on the front of flashcards instead of the original word
+                </Typography>
+              </Box>
+            }
+            sx={{ margin: 0, alignItems: 'flex-start' }}
+          />
+        </Card>
+      </Box>
+
       {/* Current Status */}
       <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
         <Typography variant="subtitle2" gutterBottom>
@@ -593,6 +629,9 @@ export const SettingsDialog = ({ open, onClose }: SettingsDialogProps) => {
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Active Provider: <strong>{dataProvider === 'localhost' ? 'Local Storage' : 'MongoDB'}</strong>
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Translation Mode: <strong>{showTranslationFirst ? 'Translation First' : 'Word First'}</strong>
         </Typography>
         {hasUnsavedChanges && (
           <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>

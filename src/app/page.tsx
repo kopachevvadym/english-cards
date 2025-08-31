@@ -35,6 +35,7 @@ import {
     Add as AddIcon,
     Storage as StorageIcon,
     Cloud as CloudIcon,
+    Translate as TranslateIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
@@ -65,7 +66,7 @@ export default function Home() {
         updateCard,
     } = useCards()
 
-    const { dataProvider, isValidConfiguration } = useSettings()
+    const { dataProvider, isValidConfiguration, showTranslationFirst, setShowTranslationFirst } = useSettings()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
@@ -502,12 +503,33 @@ export default function Home() {
                                     >
                                         {includeKnownWords ? 'All Words' : 'Unknown Only'}
                                     </Button>
+
+                                    <Button
+                                        variant={showTranslationFirst ? 'contained' : 'outlined'}
+                                        size="small"
+                                        startIcon={<TranslateIcon sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }} />}
+                                        onClick={() => setShowTranslationFirst(!showTranslationFirst)}
+                                        sx={{
+                                            fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                            py: { xs: 0.5, sm: 0.75 },
+                                            px: { xs: 1, sm: 1.5 },
+                                            minWidth: { xs: 90, sm: 110 },
+                                            height: { xs: 28, sm: 32 },
+                                            borderRadius: 2,
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            boxShadow: showTranslationFirst ? 1 : 0
+                                        }}
+                                    >
+                                        {showTranslationFirst ? 'Translation First' : 'Word First'}
+                                    </Button>
                                 </Box>
 
                                 <FlashCard
                                     card={currentCard}
                                     onMarkKnown={handleMarkKnown}
                                     onMarkUnknown={handleMarkUnknown}
+                                    showTranslationFirst={showTranslationFirst}
                                 />
 
                                 <Box sx={{ display: { xs: 'none', sm: 'block' } }}>

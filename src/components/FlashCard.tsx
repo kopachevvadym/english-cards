@@ -19,9 +19,10 @@ interface FlashCardProps {
   card: CardType
   onMarkKnown: () => void
   onMarkUnknown: () => void
+  showTranslationFirst?: boolean
 }
 
-export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) => {
+export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFirst = false }: FlashCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false)
 
   const handleCardClick = () => {
@@ -56,7 +57,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
         }}
       >
         {!isFlipped ? (
-          /* Front Side */
+          /* Front Side - shows word or translation based on setting */
           <CardContent
             sx={{
               width: '100%',
@@ -66,7 +67,9 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
               justifyContent: 'center',
               alignItems: 'center',
               textAlign: 'center',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: showTranslationFirst 
+                ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white',
               position: 'relative',
               p: { xs: 2, sm: 3 }
@@ -82,10 +85,10 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                 hyphens: 'auto'
               }}
             >
-              {card.word}
+              {showTranslationFirst ? card.translation : card.word}
             </Typography>
             
-            {card.example && (
+            {(showTranslationFirst ? card.exampleTranslation : card.example) && (
               <Typography 
                 variant="body1" 
                 sx={{ 
@@ -98,7 +101,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   px: 2
                 }}
               >
-                "{card.example}"
+                "{showTranslationFirst ? card.exampleTranslation : card.example}"
               </Typography>
             )}
             
@@ -111,7 +114,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                 fontSize: { xs: '0.8rem', sm: '0.875rem' }
               }}
             >
-              👆 Tap to reveal translation
+              👆 Tap to reveal {showTranslationFirst ? 'original word' : 'translation'}
             </Typography>
             
             <Typography 
@@ -169,7 +172,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
             </Box>
           </CardContent>
         ) : (
-          /* Back Side */
+          /* Back Side - shows translation or word based on setting */
           <CardContent
             sx={{
               width: '100%',
@@ -179,7 +182,9 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
               justifyContent: 'center',
               alignItems: 'center',
               textAlign: 'center',
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              background: showTranslationFirst 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
               color: 'white',
               p: { xs: 2, sm: 3 }
             }}
@@ -194,10 +199,10 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                 hyphens: 'auto'
               }}
             >
-              {card.translation}
+              {showTranslationFirst ? card.word : card.translation}
             </Typography>
             
-            {card.exampleTranslation && (
+            {(showTranslationFirst ? card.example : card.exampleTranslation) && (
               <Typography 
                 variant="body1" 
                 sx={{ 
@@ -210,7 +215,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                   px: 2
                 }}
               >
-                "{card.exampleTranslation}"
+                "{showTranslationFirst ? card.example : card.exampleTranslation}"
               </Typography>
             )}
             
@@ -223,7 +228,7 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown }: FlashCardProps) 
                 fontSize: { xs: '0.8rem', sm: '0.875rem' }
               }}
             >
-              Original: {card.word}
+              {showTranslationFirst ? 'Translation' : 'Original'}: {showTranslationFirst ? card.translation : card.word}
             </Typography>
             
             <Box sx={{ display: 'flex', gap: { xs: 2, sm: 1 } }}>
