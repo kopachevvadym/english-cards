@@ -45,8 +45,9 @@ export const useCards = () => {
   }
 
   const importCards = (jsonData: Record<string, string>) => {
+    const timestamp = new Date().getTime()
     const newCards: Card[] = Object.entries(jsonData).map(([word, translation], index) => ({
-      id: `${Date.now()}-${index}`,
+      id: `card-${timestamp}-${index}`,
       word: word,
       translation: translation,
       isKnown: false,

@@ -14,6 +14,10 @@ import {
     Chip,
     CircularProgress,
     Tooltip,
+    Menu,
+    MenuItem,
+    IconButton,
+    Divider,
 } from '@mui/material'
 import {
     NavigateNext as NextIcon,
@@ -27,6 +31,8 @@ import {
     CloudDownload as CloudDownloadIcon,
     CloudUpload as CloudUploadIcon,
     School as SchoolIcon,
+    Settings as SettingsIcon,
+    Add as AddIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
@@ -57,6 +63,8 @@ export default function Home() {
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
     const [mounted, setMounted] = useState(false)
+    const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null)
+    const settingsOpen = Boolean(settingsAnchorEl)
 
     // Prevent hydration mismatch
     useEffect(() => {
@@ -71,7 +79,8 @@ export default function Home() {
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    minHeight: '100vh'
+                    minHeight: '100vh',
+                    bgcolor: 'background.default'
                 }}
             >
                 <CircularProgress />
@@ -140,6 +149,35 @@ export default function Home() {
             }
         }
         input.click()
+        setSettingsAnchorEl(null)
+    }
+
+    const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
+        setSettingsAnchorEl(event.currentTarget)
+    }
+
+    const handleSettingsClose = () => {
+        setSettingsAnchorEl(null)
+    }
+
+    const handleExportProgress = () => {
+        exportProgress()
+        setSettingsAnchorEl(null)
+    }
+
+    const handleResetProgress = () => {
+        resetProgress()
+        setSettingsAnchorEl(null)
+    }
+
+    const handleAddWordFromSettings = () => {
+        setAddWordDialogOpen(true)
+        setSettingsAnchorEl(null)
+    }
+
+    const handleImportWordsFromSettings = () => {
+        setImportDialogOpen(true)
+        setSettingsAnchorEl(null)
     }
 
 
@@ -148,19 +186,19 @@ export default function Home() {
         <>
             <AppBar position="static" elevation={0}>
                 <Toolbar sx={{ px: { xs: 1, sm: 3 } }}>
-                    <Typography 
-                        variant="h6" 
-                        component="div" 
-                        sx={{ 
+                    <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{
                             flexGrow: 1,
                             fontSize: { xs: '1rem', sm: '1.25rem' }
                         }}
                     >
                         English Cards
                     </Typography>
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: { xs: 1, sm: 2 },
                         flexWrap: 'wrap'
                     }}>
@@ -169,7 +207,7 @@ export default function Home() {
                             size="small"
                             startIcon={<ViewModuleIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />}
                             onClick={() => setViewMode('cards')}
-                            sx={{ 
+                            sx={{
                                 color: viewMode === 'cards' ? 'inherit' : 'white',
                                 borderColor: 'white',
                                 '&:hover': { borderColor: 'white' },
@@ -185,7 +223,7 @@ export default function Home() {
                             size="small"
                             startIcon={<ViewListIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />}
                             onClick={() => setViewMode('list')}
-                            sx={{ 
+                            sx={{
                                 color: viewMode === 'list' ? 'inherit' : 'white',
                                 borderColor: 'white',
                                 '&:hover': { borderColor: 'white' },
@@ -200,13 +238,22 @@ export default function Home() {
                             label={`${cards.length - unknownCards.length}/${cards.length}`}
                             color="secondary"
                             variant="outlined"
-                            sx={{ 
-                                color: 'white', 
+                            sx={{
+                                color: 'white',
                                 borderColor: 'white',
                                 fontSize: { xs: '0.7rem', sm: '0.8rem' },
                                 height: { xs: 24, sm: 32 }
                             }}
                         />
+                        <IconButton
+                            onClick={handleSettingsClick}
+                            sx={{
+                                color: 'white',
+                                ml: 1
+                            }}
+                        >
+                            <SettingsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }} />
+                        </IconButton>
                     </Box>
                 </Toolbar>
             </AppBar>
@@ -217,16 +264,16 @@ export default function Home() {
                         <LinearProgress
                             variant="determinate"
                             value={progress}
-                            sx={{ 
-                                height: { xs: 6, sm: 8 }, 
-                                borderRadius: 4 
+                            sx={{
+                                height: { xs: 6, sm: 8 },
+                                borderRadius: 4
                             }}
                         />
-                        <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            sx={{ 
-                                mt: 1, 
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                mt: 1,
                                 textAlign: 'center',
                                 fontSize: { xs: '0.8rem', sm: '0.875rem' }
                             }}
@@ -238,38 +285,7 @@ export default function Home() {
 
                 {viewMode === 'list' ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
-                        {cards.length > 0 && (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                gap: { xs: 1, sm: 2 }, 
-                                justifyContent: 'center', 
-                                flexWrap: 'wrap', 
-                                mb: 2,
-                                '& .MuiButton-root': {
-                                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                                    px: { xs: 1, sm: 2 }
-                                }
-                            }}>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<CloudDownloadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
-                                    onClick={exportProgress}
-                                >
-                                    <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Export Progress</Box>
-                                    <Box sx={{ display: { xs: 'inline', sm: 'none' } }}>Export</Box>
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<CloudUploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
-                                    onClick={handleImportProgress}
-                                >
-                                    <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Import Progress</Box>
-                                    <Box sx={{ display: { xs: 'inline', sm: 'none' } }}>Import</Box>
-                                </Button>
-                            </Box>
-                        )}
+
                         <WordList
                             cards={cards}
                             onMarkKnown={markAsKnown}
@@ -309,10 +325,10 @@ export default function Home() {
                                     </Alert>
                                 )}
 
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    gap: { xs: 1, sm: 2 }, 
-                                    justifyContent: 'center', 
+                                <Box sx={{
+                                    display: 'flex',
+                                    gap: { xs: 1, sm: 2 },
+                                    justifyContent: 'center',
                                     flexWrap: 'wrap',
                                     '& .MuiButton-root': {
                                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
@@ -327,159 +343,146 @@ export default function Home() {
                                     >
                                         Add Word
                                     </Button>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<UploadIcon />}
-                                        onClick={() => setImportDialogOpen(true)}
-                                    >
-                                        Import JSON
-                                    </Button>
-                                    {cards.length > 0 && (
-                                         <>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<CloudDownloadIcon />}
-                                                onClick={exportProgress}
-                                            >
-                                                Export Progress
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<CloudUploadIcon />}
-                                                onClick={handleImportProgress}
-                                            >
-                                                Import Progress
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<RefreshIcon />}
-                                                onClick={resetProgress}
-                                            >
-                                                Reset Progress
-                                            </Button>
-                                        </>
-                                    )}
+
+
                                 </Box>
                             </Box>
                         ) : (
                             <>
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: { xs: 1, sm: 2 }, 
-                                    mb: 2,
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: { xs: 1, sm: 1.5 },
+                                    mb: 1.5,
                                     justifyContent: 'center'
                                 }}>
                                     <Button
-                                        variant="outlined"
+                                        variant="contained"
                                         onClick={handlePrevious}
                                         disabled={activeCards.length <= 1}
-                                        sx={{ 
-                                            minWidth: { xs: 40, sm: 64 },
-                                            px: { xs: 1, sm: 2 }
+                                        sx={{
+                                            minWidth: { xs: 36, sm: 44 },
+                                            height: { xs: 36, sm: 44 },
+                                            borderRadius: '50%',
+                                            p: 0,
+                                            bgcolor: 'primary.main',
+                                            '&:disabled': {
+                                                bgcolor: 'grey.300',
+                                                color: 'grey.500'
+                                            },
+                                            boxShadow: 1,
+                                            '&:hover:not(:disabled)': {
+                                                bgcolor: 'primary.dark',
+                                                boxShadow: 2
+                                            }
                                         }}
                                     >
-                                        <PrevIcon sx={{ fontSize: { xs: '1rem', sm: '1.5rem' } }} />
+                                        <PrevIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }} />
                                     </Button>
 
-                                    <Typography 
-                                        variant="h6" 
-                                        color="text.secondary"
-                                        sx={{ 
-                                            fontSize: { xs: '1rem', sm: '1.25rem' },
-                                            minWidth: { xs: 60, sm: 80 },
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        {currentCardIndex + 1} / {activeCards.length}
-                                    </Typography>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        minWidth: { xs: 60, sm: 80 }
+                                    }}>
+                                        <Typography
+                                            variant="h6"
+                                            color="primary.main"
+                                            sx={{
+                                                fontSize: { xs: '1rem', sm: '1.1rem' },
+                                                fontWeight: 'bold',
+                                                textAlign: 'center',
+                                                lineHeight: 1
+                                            }}
+                                        >
+                                            {currentCardIndex + 1}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{
+                                                fontSize: { xs: '0.6rem', sm: '0.7rem' },
+                                                textAlign: 'center',
+                                                lineHeight: 1
+                                            }}
+                                        >
+                                            of {activeCards.length}
+                                        </Typography>
+                                    </Box>
 
                                     <Button
-                                        variant="outlined"
+                                        variant="contained"
                                         onClick={handleNext}
                                         disabled={activeCards.length <= 1}
-                                        sx={{ 
-                                            minWidth: { xs: 40, sm: 64 },
-                                            px: { xs: 1, sm: 2 }
+                                        sx={{
+                                            minWidth: { xs: 36, sm: 44 },
+                                            height: { xs: 36, sm: 44 },
+                                            borderRadius: '50%',
+                                            p: 0,
+                                            bgcolor: 'primary.main',
+                                            '&:disabled': {
+                                                bgcolor: 'grey.300',
+                                                color: 'grey.500'
+                                            },
+                                            boxShadow: 1,
+                                            '&:hover:not(:disabled)': {
+                                                bgcolor: 'primary.dark',
+                                                boxShadow: 2
+                                            }
                                         }}
                                     >
-                                        <NextIcon sx={{ fontSize: { xs: '1rem', sm: '1.5rem' } }} />
+                                        <NextIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }} />
                                     </Button>
                                 </Box>
 
-                                <Box sx={{ 
-                                    display: 'flex', 
-                                    flexDirection: { xs: 'column', sm: 'row' },
-                                    alignItems: 'center', 
-                                    gap: { xs: 1.5, sm: 2 }, 
-                                    mb: 2, 
-                                    justifyContent: 'center'
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: { xs: 0.75, sm: 1 },
+                                    mb: 2,
+                                    justifyContent: 'center',
+                                    flexWrap: 'wrap'
                                 }}>
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: { xs: 'column', sm: 'row' },
-                                        alignItems: 'center', 
-                                        gap: { xs: 0.5, sm: 1 },
-                                        textAlign: 'center'
-                                    }}>
-                                        <Button
-                                            variant={isShuffled ? 'contained' : 'outlined'}
-                                            size="small"
-                                            startIcon={<ShuffleIcon sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }} />}
-                                            onClick={toggleShuffle}
-                                            sx={{
-                                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                                py: { xs: 0.25, sm: 0.5 },
-                                                px: { xs: 1, sm: 1.5 },
-                                                minWidth: { xs: 100, sm: 'auto' }
-                                            }}
-                                        >
-                                            {isShuffled ? 'Shuffled' : 'Sequential'}
-                                        </Button>
-                                        <Typography 
-                                            variant="caption" 
-                                            color="text.secondary"
-                                            sx={{ 
-                                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                                                display: { xs: 'block', sm: 'inline' }
-                                            }}
-                                        >
-                                            {isShuffled ? '🔀 Random order' : '📋 Original order'}
-                                        </Typography>
-                                    </Box>
-                                    
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: { xs: 'column', sm: 'row' },
-                                        alignItems: 'center', 
-                                        gap: { xs: 0.5, sm: 1 },
-                                        textAlign: 'center'
-                                    }}>
-                                        <Button
-                                            variant={includeKnownWords ? 'contained' : 'outlined'}
-                                            size="small"
-                                            startIcon={<SchoolIcon sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }} />}
-                                            onClick={toggleIncludeKnownWords}
-                                            sx={{
-                                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                                py: { xs: 0.25, sm: 0.5 },
-                                                px: { xs: 1, sm: 1.5 },
-                                                minWidth: { xs: 100, sm: 'auto' }
-                                            }}
-                                        >
-                                            {includeKnownWords ? 'All Words' : 'Unknown Only'}
-                                        </Button>
-                                        <Typography 
-                                            variant="caption" 
-                                            color="text.secondary"
-                                            sx={{ 
-                                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                                                display: { xs: 'block', sm: 'inline' }
-                                            }}
-                                        >
-                                            {includeKnownWords ? '📚 Review all cards' : '🎯 Focus on learning'}
-                                        </Typography>
-                                    </Box>
+                                    <Button
+                                        variant={isShuffled ? 'contained' : 'outlined'}
+                                        size="small"
+                                        startIcon={<ShuffleIcon sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }} />}
+                                        onClick={toggleShuffle}
+                                        sx={{
+                                            fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                            py: { xs: 0.5, sm: 0.75 },
+                                            px: { xs: 1, sm: 1.5 },
+                                            minWidth: { xs: 90, sm: 110 },
+                                            height: { xs: 28, sm: 32 },
+                                            borderRadius: 2,
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            boxShadow: isShuffled ? 1 : 0
+                                        }}
+                                    >
+                                        {isShuffled ? 'Shuffled' : 'Sequential'}
+                                    </Button>
+
+                                    <Button
+                                        variant={includeKnownWords ? 'contained' : 'outlined'}
+                                        size="small"
+                                        startIcon={<SchoolIcon sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }} />}
+                                        onClick={toggleIncludeKnownWords}
+                                        sx={{
+                                            fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                            py: { xs: 0.5, sm: 0.75 },
+                                            px: { xs: 1, sm: 1.5 },
+                                            minWidth: { xs: 90, sm: 110 },
+                                            height: { xs: 28, sm: 32 },
+                                            borderRadius: 2,
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            boxShadow: includeKnownWords ? 1 : 0
+                                        }}
+                                    >
+                                        {includeKnownWords ? 'All Words' : 'Unknown Only'}
+                                    </Button>
                                 </Box>
 
                                 <FlashCard
@@ -488,87 +491,18 @@ export default function Home() {
                                     onMarkUnknown={handleMarkUnknown}
                                 />
 
-                                <GameStats 
-                                    cards={cards}
-                                    activeCards={activeCards}
-                                    includeKnownWords={includeKnownWords}
-                                />
+                                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                    <GameStats
+                                        cards={cards}
+                                        activeCards={activeCards}
+                                        includeKnownWords={includeKnownWords}
+                                    />
+                                </Box>
                             </>
                         )}
                     </Box>
                 )}
             </Container>
-
-            <Box sx={{ 
-                position: 'fixed', 
-                bottom: { xs: 12, sm: 16 }, 
-                right: { xs: 12, sm: 16 }, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: { xs: 0.5, sm: 1 },
-                zIndex: 1000
-            }}>
-                <Tooltip title="Add a new word" placement="left">
-                    <Fab
-                        color="primary"
-                        aria-label="add word"
-                        onClick={() => setAddWordDialogOpen(true)}
-
-                        sx={{ 
-                            width: { xs: 48, sm: 56 },
-                            height: { xs: 48, sm: 56 }
-                        }}
-                    >
-                        <CreateIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
-                    </Fab>
-                </Tooltip>
-                <Tooltip title="Import words from JSON" placement="left">
-                    <Fab
-                        color="secondary"
-                        aria-label="import"
-                        size="small"
-                        onClick={() => setImportDialogOpen(true)}
-                        sx={{ 
-                            width: { xs: 40, sm: 40 },
-                            height: { xs: 40, sm: 40 }
-                        }}
-                    >
-                        <UploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                    </Fab>
-                </Tooltip>
-                {cards.length > 0 && (
-                    <>
-                        <Tooltip title="Download your progress as a file" placement="left">
-                            <Fab
-                                color="info"
-                                aria-label="export progress"
-                                size="small"
-                                onClick={exportProgress}
-                                sx={{ 
-                                    width: { xs: 40, sm: 40 },
-                                    height: { xs: 40, sm: 40 }
-                                }}
-                            >
-                                <CloudDownloadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                            </Fab>
-                        </Tooltip>
-                        <Tooltip title="Upload and restore previous progress" placement="left">
-                            <Fab
-                                color="warning"
-                                aria-label="import progress"
-                                size="small"
-                                onClick={handleImportProgress}
-                                sx={{ 
-                                    width: { xs: 40, sm: 40 },
-                                    height: { xs: 40, sm: 40 }
-                                }}
-                            >
-                                <CloudUploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                            </Fab>
-                        </Tooltip>
-                    </>
-                )}
-            </Box>
 
             <AddWordDialog
                 open={addWordDialogOpen}
@@ -581,6 +515,56 @@ export default function Home() {
                 onClose={() => setImportDialogOpen(false)}
                 onImport={importCards}
             />
+
+            {/* Settings Menu */}
+            <Menu
+                anchorEl={settingsAnchorEl}
+                open={settingsOpen}
+                onClose={handleSettingsClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            mt: 1,
+                            minWidth: 200,
+                            boxShadow: 3,
+                            borderRadius: 2
+                        }
+                    }
+                }}
+            >
+                <MenuItem onClick={handleAddWordFromSettings}>
+                    <AddIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    Add Word
+                </MenuItem>
+                <MenuItem onClick={handleImportWordsFromSettings}>
+                    <UploadIcon sx={{ mr: 2, color: 'secondary.main' }} />
+                    Import Words
+                </MenuItem>
+                {cards.length > 0 && [
+                    <Divider key="divider1" />,
+                    <MenuItem key="export" onClick={handleExportProgress}>
+                        <CloudDownloadIcon sx={{ mr: 2, color: 'info.main' }} />
+                        Export Progress
+                    </MenuItem>,
+                    <MenuItem key="import" onClick={handleImportProgress}>
+                        <CloudUploadIcon sx={{ mr: 2, color: 'warning.main' }} />
+                        Import Progress
+                    </MenuItem>,
+                    <Divider key="divider2" />,
+                    <MenuItem key="reset" onClick={handleResetProgress} sx={{ color: 'error.main' }}>
+                        <RefreshIcon sx={{ mr: 2 }} />
+                        Reset Progress
+                    </MenuItem>
+                ]}
+            </Menu>
         </>
     )
 }
