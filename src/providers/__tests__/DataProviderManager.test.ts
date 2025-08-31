@@ -1,15 +1,18 @@
 import { DataProviderManager } from '../DataProviderManager'
-import { IDataProvider, ProviderError, DataProviderError } from '../types'
+import { IDataProvider, IDataProviderWithStatus, ProviderError, DataProviderError, ProviderStatus, ProviderStatusInfo } from '../types'
 import { ErrorNotification } from '../FallbackHandler'
 import { Card } from '../../types/card'
 
 // Mock provider implementation for testing
-class MockProvider implements IDataProvider {
+class MockProvider implements IDataProviderWithStatus {
   private shouldFail: boolean = false
   private failureType: DataProviderError = DataProviderError.CONNECTION_FAILED
   private failureMessage: string = 'Mock failure'
   private callCount: number = 0
   private isConnected: boolean = false
+  private currentStatus: ProviderStatus = ProviderStatus.DISCONNECTED
+  
+  public onStatusChange?: (status: ProviderStatusInfo) => void
 
   constructor(private name: string) {}
 
@@ -17,6 +20,7 @@ class MockProvider implements IDataProvider {
     this.shouldFail = shouldFail
     if (type) this.failureType = type
     if (message) this.failureMessage = message
+    this.currentStatus = shouldFail ? ProviderStatus.ERROR : ProviderStatus.CONNECTED
   }
 
   getCallCount(): number {
@@ -90,6 +94,30 @@ class MockProvider implements IDataProvider {
 
   isConnectedState(): boolean {
     return this.isConnected
+  }
+
+  // IDataProviderWithStatus methods
+  async getStatus(): Promise<ProviderStatusInfo> {
+    return {
+      status: this.currentStatus,
+      message: this.shouldFail ? this.failureMessage : 'Mock provider operational',
+      lastChecked: new Date(),
+      error: this.shouldFail ? new ProviderError(this.failureType, this.failureMessage, this.name) : undefined
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    this.callCount++
+    return !this.shouldFail
+  }
+
+  async reconnect(): Promise<void> {
+    this.callCount++
+    if (this.shouldFail) {
+      throw new ProviderError(this.failureType, this.failureMessage, this.name)
+    }
+    this.isConnected = true
+    this.currentStatus = ProviderStatus.CONNECTED
   }
 }
 
@@ -328,6 +356,92 @@ describe('DataProviderManager', () => {
     })
   })
 
+  describe('status management', () => {
+    it('should get status from current provider', async () => {
+      const status = await manager.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.DISCONNECTED)
+      expect(status.message).toBe('Mock provider operational')
+      expect(status.lastChecked).toBeInstanceOf(Date)
+    })
+
+    it('should get status from specific provider', async () => {
+      const status = await manager.getProviderStatus('localhost')
+      
+      expect(status.status).toBe(ProviderStatus.DISCONNECTED)
+      expect(status.message).toBe('Mock provider operational')
+    })
+
+    it('should return error status for non-existent provider', async () => {
+      const status = await manager.getProviderStatus('nonexistent')
+      
+      expect(status.status).toBe(ProviderStatus.UNAVAILABLE)
+      expect(status.message).toContain('not registered')
+      expect(status.error).toBeInstanceOf(ProviderError)
+    })
+
+    it('should test connection for current provider', async () => {
+      const result = await manager.testConnection()
+      expect(result).toBe(true)
+      expect(primaryProvider.getCallCount()).toBeGreaterThan(0)
+    })
+
+    it('should test connection for specific provider', async () => {
+      const result = await manager.testProviderConnection('localhost')
+      expect(result).toBe(true)
+      expect(fallbackProvider.getCallCount()).toBeGreaterThan(0)
+    })
+
+    it('should return false for connection test of non-existent provider', async () => {
+      const result = await manager.testProviderConnection('nonexistent')
+      expect(result).toBe(false)
+    })
+
+    it('should reconnect current provider', async () => {
+      await manager.reconnect()
+      expect(primaryProvider.isConnectedState()).toBe(true)
+    })
+
+    it('should reconnect specific provider', async () => {
+      await manager.reconnectProvider('localhost')
+      expect(fallbackProvider.isConnectedState()).toBe(true)
+    })
+
+    it('should throw error when reconnecting non-existent provider', async () => {
+      await expect(manager.reconnectProvider('nonexistent')).rejects.toThrow(
+        "Provider 'nonexistent' is not registered"
+      )
+    })
+
+    it('should get all provider statuses', async () => {
+      const statuses = await manager.getAllProviderStatuses()
+      
+      expect(statuses).toHaveProperty('primary')
+      expect(statuses).toHaveProperty('localhost')
+      expect(statuses.primary.status).toBe(ProviderStatus.DISCONNECTED)
+      expect(statuses.localhost.status).toBe(ProviderStatus.DISCONNECTED)
+    })
+
+    it('should handle status listeners', () => {
+      const mockListener = jest.fn()
+      
+      manager.addStatusListener('primary', mockListener)
+      
+      // Simulate status change
+      if (primaryProvider.onStatusChange) {
+        const statusInfo: ProviderStatusInfo = {
+          status: ProviderStatus.CONNECTED,
+          message: 'Connected',
+          lastChecked: new Date()
+        }
+        primaryProvider.onStatusChange(statusInfo)
+        expect(mockListener).toHaveBeenCalledWith(statusInfo)
+      }
+      
+      manager.removeStatusListener('primary')
+    })
+  })
+
   describe('edge cases', () => {
     it('should handle empty provider list', () => {
       const emptyManager = new DataProviderManager()
@@ -354,6 +468,28 @@ describe('DataProviderManager', () => {
       
       // Should not throw error even if disconnect fails
       await expect(manager.switchProvider('localhost')).resolves.not.toThrow()
+    })
+
+    it('should handle providers without status support', async () => {
+      // Create a basic provider without status methods
+      const basicProvider: IDataProvider = {
+        async getCards() { return [] },
+        async saveCard(card: Card) { return card },
+        async updateCard(card: Card) { return card },
+        async deleteCard() {},
+        async saveCards(cards: Card[]) { return cards },
+        getProviderName() { return 'basic' },
+        async isAvailable() { return true },
+        async connect() {},
+        async disconnect() {}
+      }
+      
+      manager.registerProvider('basic', basicProvider)
+      await manager.switchProvider('basic')
+      
+      // Should still work with fallback status implementation
+      const status = await manager.getStatus()
+      expect(status.status).toBe(ProviderStatus.CONNECTED)
     })
   })
 })

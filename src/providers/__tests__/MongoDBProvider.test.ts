@@ -412,6 +412,83 @@ describe('MongoDBProvider', () => {
     })
   })
 
+  describe('status management', () => {
+    beforeEach(async () => {
+      mockClient.connect.mockResolvedValue(undefined)
+      mockDb.command.mockResolvedValue({ ok: 1 })
+      mockCollection.createIndex.mockResolvedValue('id_1')
+    })
+
+    it('should get status when connected', async () => {
+      await provider.connect()
+      
+      const status = await provider.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.CONNECTED)
+      expect(status.message).toBe('Connected and operational')
+      expect(status.lastChecked).toBeInstanceOf(Date)
+      expect(status.connectionTime).toBeGreaterThan(0)
+    })
+
+    it('should get disconnected status when not connected', async () => {
+      const status = await provider.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.DISCONNECTED)
+      expect(status.message).toBe('Not connected')
+      expect(status.lastChecked).toBeInstanceOf(Date)
+    })
+
+    it('should get error status when connection fails', async () => {
+      await provider.connect()
+      mockDb.command.mockRejectedValue(new Error('Connection lost'))
+      
+      const status = await provider.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.ERROR)
+      expect(status.message).toContain('Connection error')
+      expect(status.error).toBeDefined()
+    })
+
+    it('should test connection successfully', async () => {
+      const result = await provider.testConnection()
+      expect(result).toBe(true)
+    })
+
+    it('should test connection failure', async () => {
+      mockClient.connect.mockRejectedValue(new Error('Connection failed'))
+      
+      const result = await provider.testConnection()
+      expect(result).toBe(false)
+    })
+
+    it('should reconnect successfully', async () => {
+      await provider.connect()
+      await provider.disconnect()
+      
+      await provider.reconnect()
+      
+      expect(mockClient.connect).toHaveBeenCalledTimes(2) // Once for initial connect, once for reconnect
+    })
+
+    it('should fail to reconnect with invalid config', async () => {
+      mockClient.connect.mockRejectedValue(new Error('Invalid connection string'))
+      
+      await expect(provider.reconnect()).rejects.toThrow(ProviderError)
+    })
+
+    it('should handle status change callbacks', async () => {
+      const mockCallback = jest.fn()
+      provider.onStatusChange = mockCallback
+
+      await provider.connect()
+      
+      // The callback should have been called during connect
+      expect(mockCallback).toHaveBeenCalled()
+      const callArgs = mockCallback.mock.calls[0][0]
+      expect(callArgs.status).toBe(ProviderStatus.CONNECTED)
+    })
+  })
+
   describe('getConfig', () => {
     it('should return config without connection string', () => {
       const config = provider.getConfig()

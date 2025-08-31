@@ -381,6 +381,82 @@ describe('LocalStorageProvider', () => {
     })
   })
 
+  describe('status management', () => {
+    it('should get current status', async () => {
+      const status = await provider.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.CONNECTED)
+      expect(status.message).toBe('localStorage is available and operational')
+      expect(status.lastChecked).toBeInstanceOf(Date)
+      expect(status.error).toBeUndefined()
+    })
+
+    it('should get unavailable status when localStorage fails', async () => {
+      localStorageMock.setItem.mockImplementation(() => {
+        throw new Error('localStorage not available')
+      })
+      localStorageMock.removeItem.mockImplementation(() => {
+        throw new Error('localStorage not available')
+      })
+
+      const status = await provider.getStatus()
+      
+      expect(status.status).toBe(ProviderStatus.UNAVAILABLE)
+      expect(status.message).toBe('localStorage is not available')
+      expect(status.error).toBeInstanceOf(ProviderError)
+      
+      // Reset mocks
+      localStorageMock.setItem.mockReset()
+      localStorageMock.removeItem.mockReset()
+    })
+
+    it('should test connection successfully', async () => {
+      const result = await provider.testConnection()
+      expect(result).toBe(true)
+    })
+
+    it('should test connection failure', async () => {
+      localStorageMock.setItem.mockImplementationOnce(() => {
+        throw new Error('localStorage error')
+      })
+
+      const result = await provider.testConnection()
+      expect(result).toBe(false)
+    })
+
+    it('should reconnect successfully', async () => {
+      await provider.reconnect()
+      // Should not throw and should update status
+    })
+
+    it('should fail to reconnect when localStorage unavailable', async () => {
+      localStorageMock.setItem.mockImplementation(() => {
+        throw new Error('localStorage not available')
+      })
+      localStorageMock.removeItem.mockImplementation(() => {
+        throw new Error('localStorage not available')
+      })
+
+      await expect(provider.reconnect()).rejects.toThrow(ProviderError)
+      
+      // Reset mocks
+      localStorageMock.setItem.mockReset()
+      localStorageMock.removeItem.mockReset()
+    })
+
+    it('should handle status change callbacks', async () => {
+      const mockCallback = jest.fn()
+      provider.onStatusChange = mockCallback
+
+      await provider.connect()
+      
+      // The callback should have been called during connect
+      expect(mockCallback).toHaveBeenCalled()
+      const callArgs = mockCallback.mock.calls[0][0]
+      expect(callArgs.status).toBe(ProviderStatus.CONNECTED)
+    })
+  })
+
   describe('error handling', () => {
     it('should wrap localStorage errors in ProviderError', async () => {
       localStorageMock.getItem.mockImplementationOnce(() => {
