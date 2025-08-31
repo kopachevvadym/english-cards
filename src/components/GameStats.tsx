@@ -81,11 +81,11 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
   ]
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 420, mt: 2 }}>
+    <Box sx={{ width: '100%', maxWidth: { xs: '100%', sm: 420 }, mt: 2 }}>
       <Paper 
         elevation={1} 
         sx={{ 
-          p: 2, 
+          p: { xs: 1.5, sm: 2 }, 
           background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
           borderRadius: 2
         }}
@@ -96,14 +96,20 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
             textAlign: 'center', 
             fontWeight: 600,
             color: 'text.primary',
-            mb: 1.5,
-            fontSize: '0.875rem'
+            mb: { xs: 1, sm: 1.5 },
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            lineHeight: 1.3
           }}
         >
           📊 {getMotivationalMessage()}
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          gap: { xs: 0.5, sm: 1 },
+          flexWrap: { xs: 'wrap', sm: 'nowrap' }
+        }}>
           {stats.map((stat, index) => (
             <Box
               key={index}
@@ -111,19 +117,20 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                flex: 1,
-                p: 1,
+                flex: { xs: '1 1 45%', sm: 1 },
+                p: { xs: 0.75, sm: 1 },
                 bgcolor: 'white',
                 borderRadius: 1.5,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 transition: 'transform 0.2s ease-in-out',
+                minWidth: { xs: 70, sm: 'auto' },
                 '&:hover': {
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  transform: { xs: 'none', sm: 'translateY(-1px)' },
+                  boxShadow: { xs: '0 1px 3px rgba(0,0,0,0.1)', sm: '0 2px 6px rgba(0,0,0,0.15)' },
                 }
               }}
             >
-              <Box sx={{ mb: 0.5, '& svg': { fontSize: '1.2rem' } }}>
+              <Box sx={{ mb: { xs: 0.25, sm: 0.5 }, '& svg': { fontSize: { xs: '1rem', sm: '1.2rem' } } }}>
                 {stat.icon}
               </Box>
               <Typography 
@@ -131,7 +138,7 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 sx={{ 
                   fontWeight: 700,
                   color: stat.color,
-                  fontSize: '0.875rem',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   lineHeight: 1
                 }}
               >
@@ -142,9 +149,9 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 color="text.secondary"
                 sx={{ 
                   textAlign: 'center',
-                  fontSize: '0.7rem',
+                  fontSize: { xs: '0.6rem', sm: '0.7rem' },
                   lineHeight: 1,
-                  mt: 0.25
+                  mt: { xs: 0.1, sm: 0.25 }
                 }}
               >
                 {stat.label}
@@ -155,14 +162,24 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
 
         {/* Compact achievement badges */}
         {(knownCards.length >= 5 || completionRate >= 50 || completionRate === 100) && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mt: 1.5 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: { xs: 0.25, sm: 0.5 }, 
+            mt: { xs: 1, sm: 1.5 },
+            flexWrap: 'wrap'
+          }}>
             {knownCards.length >= 5 && (
               <Chip 
                 label="🎯" 
                 size="small" 
                 color="success" 
                 variant="outlined"
-                sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.5 } }}
+                sx={{ 
+                  height: { xs: 18, sm: 20 }, 
+                  fontSize: { xs: '0.6rem', sm: '0.7rem' }, 
+                  '& .MuiChip-label': { px: { xs: 0.25, sm: 0.5 } } 
+                }}
               />
             )}
             {knownCards.length >= 10 && (
@@ -171,7 +188,11 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 size="small" 
                 color="primary" 
                 variant="outlined"
-                sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.5 } }}
+                sx={{ 
+                  height: { xs: 18, sm: 20 }, 
+                  fontSize: { xs: '0.6rem', sm: '0.7rem' }, 
+                  '& .MuiChip-label': { px: { xs: 0.25, sm: 0.5 } } 
+                }}
               />
             )}
             {completionRate >= 50 && (
@@ -180,7 +201,11 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 size="small" 
                 color="warning" 
                 variant="outlined"
-                sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.5 } }}
+                sx={{ 
+                  height: { xs: 18, sm: 20 }, 
+                  fontSize: { xs: '0.6rem', sm: '0.7rem' }, 
+                  '& .MuiChip-label': { px: { xs: 0.25, sm: 0.5 } } 
+                }}
               />
             )}
             {completionRate === 100 && (
@@ -189,7 +214,11 @@ export const GameStats = ({ cards, activeCards, includeKnownWords = false }: Gam
                 size="small" 
                 color="error" 
                 variant="outlined"
-                sx={{ height: 20, fontSize: '0.7rem', '& .MuiChip-label': { px: 0.5 } }}
+                sx={{ 
+                  height: { xs: 18, sm: 20 }, 
+                  fontSize: { xs: '0.6rem', sm: '0.7rem' }, 
+                  '& .MuiChip-label': { px: { xs: 0.25, sm: 0.5 } } 
+                }}
               />
             )}
           </Box>

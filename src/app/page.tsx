@@ -147,56 +147,90 @@ export default function Home() {
     return (
         <>
             <AppBar position="static" elevation={0}>
-                <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                <Toolbar sx={{ px: { xs: 1, sm: 3 } }}>
+                    <Typography 
+                        variant="h6" 
+                        component="div" 
+                        sx={{ 
+                            flexGrow: 1,
+                            fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                    >
                         English Cards
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: { xs: 1, sm: 2 },
+                        flexWrap: 'wrap'
+                    }}>
                         <Button
                             variant={viewMode === 'cards' ? 'contained' : 'outlined'}
                             size="small"
-                            startIcon={<ViewModuleIcon />}
+                            startIcon={<ViewModuleIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />}
                             onClick={() => setViewMode('cards')}
                             sx={{ 
                                 color: viewMode === 'cards' ? 'inherit' : 'white',
                                 borderColor: 'white',
-                                '&:hover': { borderColor: 'white' }
+                                '&:hover': { borderColor: 'white' },
+                                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 },
+                                minWidth: { xs: 'auto', sm: 'auto' }
                             }}
                         >
-                            Cards
+                            <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Cards</Box>
                         </Button>
                         <Button
                             variant={viewMode === 'list' ? 'contained' : 'outlined'}
                             size="small"
-                            startIcon={<ViewListIcon />}
+                            startIcon={<ViewListIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />}
                             onClick={() => setViewMode('list')}
                             sx={{ 
                                 color: viewMode === 'list' ? 'inherit' : 'white',
                                 borderColor: 'white',
-                                '&:hover': { borderColor: 'white' }
+                                '&:hover': { borderColor: 'white' },
+                                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                                px: { xs: 1, sm: 2 },
+                                minWidth: { xs: 'auto', sm: 'auto' }
                             }}
                         >
-                            List
+                            <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>List</Box>
                         </Button>
                         <Chip
-                            label={`${cards.length - unknownCards.length}/${cards.length} learned`}
+                            label={`${cards.length - unknownCards.length}/${cards.length}`}
                             color="secondary"
                             variant="outlined"
-                            sx={{ color: 'white', borderColor: 'white' }}
+                            sx={{ 
+                                color: 'white', 
+                                borderColor: 'white',
+                                fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                height: { xs: 24, sm: 32 }
+                            }}
                         />
                     </Box>
                 </Toolbar>
             </AppBar>
 
-            <Container maxWidth="md" sx={{ py: 4 }}>
+            <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
                 {cards.length > 0 && (
                     <Box sx={{ mb: 3 }}>
                         <LinearProgress
                             variant="determinate"
                             value={progress}
-                            sx={{ height: 8, borderRadius: 4 }}
+                            sx={{ 
+                                height: { xs: 6, sm: 8 }, 
+                                borderRadius: 4 
+                            }}
                         />
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                        <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ 
+                                mt: 1, 
+                                textAlign: 'center',
+                                fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                            }}
+                        >
                             Progress: {Math.round(progress)}%
                         </Typography>
                     </Box>
@@ -205,22 +239,34 @@ export default function Home() {
                 {viewMode === 'list' ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
                         {cards.length > 0 && (
-                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                gap: { xs: 1, sm: 2 }, 
+                                justifyContent: 'center', 
+                                flexWrap: 'wrap', 
+                                mb: 2,
+                                '& .MuiButton-root': {
+                                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                                    px: { xs: 1, sm: 2 }
+                                }
+                            }}>
                                 <Button
                                     variant="outlined"
                                     size="small"
-                                    startIcon={<CloudDownloadIcon />}
+                                    startIcon={<CloudDownloadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
                                     onClick={exportProgress}
                                 >
-                                    Export Progress
+                                    <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Export Progress</Box>
+                                    <Box sx={{ display: { xs: 'inline', sm: 'none' } }}>Export</Box>
                                 </Button>
                                 <Button
                                     variant="outlined"
                                     size="small"
-                                    startIcon={<CloudUploadIcon />}
+                                    startIcon={<CloudUploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
                                     onClick={handleImportProgress}
                                 >
-                                    Import Progress
+                                    <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Import Progress</Box>
+                                    <Box sx={{ display: { xs: 'inline', sm: 'none' } }}>Import</Box>
                                 </Button>
                             </Box>
                         )}
@@ -233,7 +279,7 @@ export default function Home() {
                 ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                         {activeCards.length === 0 ? (
-                            <Box sx={{ textAlign: 'center', py: 8 }}>
+                            <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 }, px: { xs: 1, sm: 2 } }}>
                                 {cards.length === 0 ? (
                                     <Alert severity="info" sx={{ mb: 3 }}>
                                         <Typography variant="h6" gutterBottom>
@@ -263,7 +309,17 @@ export default function Home() {
                                     </Alert>
                                 )}
 
-                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    gap: { xs: 1, sm: 2 }, 
+                                    justifyContent: 'center', 
+                                    flexWrap: 'wrap',
+                                    '& .MuiButton-root': {
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                        px: { xs: 1.5, sm: 2 },
+                                        py: { xs: 0.5, sm: 1 }
+                                    }
+                                }}>
                                     <Button
                                         variant="contained"
                                         startIcon={<CreateIcon />}
@@ -307,16 +363,34 @@ export default function Home() {
                             </Box>
                         ) : (
                             <>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: { xs: 1, sm: 2 }, 
+                                    mb: 2,
+                                    justifyContent: 'center'
+                                }}>
                                     <Button
                                         variant="outlined"
                                         onClick={handlePrevious}
                                         disabled={activeCards.length <= 1}
+                                        sx={{ 
+                                            minWidth: { xs: 40, sm: 64 },
+                                            px: { xs: 1, sm: 2 }
+                                        }}
                                     >
-                                        <PrevIcon />
+                                        <PrevIcon sx={{ fontSize: { xs: '1rem', sm: '1.5rem' } }} />
                                     </Button>
 
-                                    <Typography variant="h6" color="text.secondary">
+                                    <Typography 
+                                        variant="h6" 
+                                        color="text.secondary"
+                                        sx={{ 
+                                            fontSize: { xs: '1rem', sm: '1.25rem' },
+                                            minWidth: { xs: 60, sm: 80 },
+                                            textAlign: 'center'
+                                        }}
+                                    >
                                         {currentCardIndex + 1} / {activeCards.length}
                                     </Typography>
 
@@ -324,46 +398,85 @@ export default function Home() {
                                         variant="outlined"
                                         onClick={handleNext}
                                         disabled={activeCards.length <= 1}
+                                        sx={{ 
+                                            minWidth: { xs: 40, sm: 64 },
+                                            px: { xs: 1, sm: 2 }
+                                        }}
                                     >
-                                        <NextIcon />
+                                        <NextIcon sx={{ fontSize: { xs: '1rem', sm: '1.5rem' } }} />
                                     </Button>
                                 </Box>
 
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    alignItems: 'center', 
+                                    gap: { xs: 1.5, sm: 2 }, 
+                                    mb: 2, 
+                                    justifyContent: 'center'
+                                }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        alignItems: 'center', 
+                                        gap: { xs: 0.5, sm: 1 },
+                                        textAlign: 'center'
+                                    }}>
                                         <Button
                                             variant={isShuffled ? 'contained' : 'outlined'}
                                             size="small"
-                                            startIcon={<ShuffleIcon />}
+                                            startIcon={<ShuffleIcon sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }} />}
                                             onClick={toggleShuffle}
                                             sx={{
-                                                fontSize: '0.75rem',
-                                                py: 0.5,
-                                                px: 1.5,
+                                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                                py: { xs: 0.25, sm: 0.5 },
+                                                px: { xs: 1, sm: 1.5 },
+                                                minWidth: { xs: 100, sm: 'auto' }
                                             }}
                                         >
                                             {isShuffled ? 'Shuffled' : 'Sequential'}
                                         </Button>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography 
+                                            variant="caption" 
+                                            color="text.secondary"
+                                            sx={{ 
+                                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                                display: { xs: 'block', sm: 'inline' }
+                                            }}
+                                        >
                                             {isShuffled ? '🔀 Random order' : '📋 Original order'}
                                         </Typography>
                                     </Box>
                                     
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        alignItems: 'center', 
+                                        gap: { xs: 0.5, sm: 1 },
+                                        textAlign: 'center'
+                                    }}>
                                         <Button
                                             variant={includeKnownWords ? 'contained' : 'outlined'}
                                             size="small"
-                                            startIcon={<SchoolIcon />}
+                                            startIcon={<SchoolIcon sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }} />}
                                             onClick={toggleIncludeKnownWords}
                                             sx={{
-                                                fontSize: '0.75rem',
-                                                py: 0.5,
-                                                px: 1.5,
+                                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                                py: { xs: 0.25, sm: 0.5 },
+                                                px: { xs: 1, sm: 1.5 },
+                                                minWidth: { xs: 100, sm: 'auto' }
                                             }}
                                         >
                                             {includeKnownWords ? 'All Words' : 'Unknown Only'}
                                         </Button>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography 
+                                            variant="caption" 
+                                            color="text.secondary"
+                                            sx={{ 
+                                                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                                display: { xs: 'block', sm: 'inline' }
+                                            }}
+                                        >
                                             {includeKnownWords ? '📚 Review all cards' : '🎯 Focus on learning'}
                                         </Typography>
                                     </Box>
@@ -386,14 +499,27 @@ export default function Home() {
                 )}
             </Container>
 
-            <Box sx={{ position: 'fixed', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ 
+                position: 'fixed', 
+                bottom: { xs: 12, sm: 16 }, 
+                right: { xs: 12, sm: 16 }, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: { xs: 0.5, sm: 1 },
+                zIndex: 1000
+            }}>
                 <Tooltip title="Add a new word" placement="left">
                     <Fab
                         color="primary"
                         aria-label="add word"
                         onClick={() => setAddWordDialogOpen(true)}
+
+                        sx={{ 
+                            width: { xs: 48, sm: 56 },
+                            height: { xs: 48, sm: 56 }
+                        }}
                     >
-                        <CreateIcon />
+                        <CreateIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
                     </Fab>
                 </Tooltip>
                 <Tooltip title="Import words from JSON" placement="left">
@@ -402,8 +528,12 @@ export default function Home() {
                         aria-label="import"
                         size="small"
                         onClick={() => setImportDialogOpen(true)}
+                        sx={{ 
+                            width: { xs: 40, sm: 40 },
+                            height: { xs: 40, sm: 40 }
+                        }}
                     >
-                        <UploadIcon />
+                        <UploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                     </Fab>
                 </Tooltip>
                 {cards.length > 0 && (
@@ -414,8 +544,12 @@ export default function Home() {
                                 aria-label="export progress"
                                 size="small"
                                 onClick={exportProgress}
+                                sx={{ 
+                                    width: { xs: 40, sm: 40 },
+                                    height: { xs: 40, sm: 40 }
+                                }}
                             >
-                                <CloudDownloadIcon />
+                                <CloudDownloadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                             </Fab>
                         </Tooltip>
                         <Tooltip title="Upload and restore previous progress" placement="left">
@@ -424,8 +558,12 @@ export default function Home() {
                                 aria-label="import progress"
                                 size="small"
                                 onClick={handleImportProgress}
+                                sx={{ 
+                                    width: { xs: 40, sm: 40 },
+                                    height: { xs: 40, sm: 40 }
+                                }}
                             >
-                                <CloudUploadIcon />
+                                <CloudUploadIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                             </Fab>
                         </Tooltip>
                     </>
