@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   Box,
   Paper,
@@ -10,10 +11,15 @@ import {
   List,
   ListItem,
   Divider,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material'
 import {
   Check as CheckIcon,
   Undo as UndoIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { Card } from '@/types/card'
 
@@ -21,14 +27,45 @@ interface WordListProps {
   cards: Card[]
   onMarkKnown: (cardId: string) => void
   onMarkUnknown: (cardId: string) => void
+  onDeleteCard: (cardId: string) => void
 }
 
-export const WordList = ({ cards, onMarkKnown, onMarkUnknown }: WordListProps) => {
+export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard }: WordListProps) => {
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number
+    mouseY: number
+    cardId: string
+  } | null>(null)
+
   const handleToggleKnown = (card: Card) => {
     if (card.isKnown) {
       onMarkUnknown(card.id)
     } else {
       onMarkKnown(card.id)
+    }
+  }
+
+  const handleContextMenu = (event: React.MouseEvent, cardId: string) => {
+    event.preventDefault()
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+            cardId,
+          }
+        : null
+    )
+  }
+
+  const handleContextMenuClose = () => {
+    setContextMenu(null)
+  }
+
+  const handleDeleteCard = () => {
+    if (contextMenu) {
+      onDeleteCard(contextMenu.cardId)
+      handleContextMenuClose()
     }
   }
 
@@ -60,6 +97,7 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown }: WordListProps) =
             >
               <Paper
                 elevation={1}
+                onContextMenu={(e) => handleContextMenu(e, card.id)}
                 sx={{
                   width: '100%',
                   p: { xs: 2, sm: 3 },
@@ -204,6 +242,37 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown }: WordListProps) =
           </Typography>
         </Box>
       )}
+
+      {/* Context Menu */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleContextMenuClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 120,
+              boxShadow: 3,
+              borderRadius: 1,
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={handleDeleteCard} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteIcon sx={{ color: 'error.main', fontSize: '1.2rem' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Delete Word" 
+            primaryTypographyProps={{ fontSize: '0.875rem' }}
+          />
+        </MenuItem>
+      </Menu>
     </Box>
   )
 }

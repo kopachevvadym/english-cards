@@ -57,6 +57,7 @@ export default function Home() {
         toggleIncludeKnownWords,
         exportProgress,
         importProgress,
+        deleteCard,
     } = useCards()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
@@ -290,6 +291,7 @@ export default function Home() {
                             cards={cards}
                             onMarkKnown={markAsKnown}
                             onMarkUnknown={markAsUnknown}
+                            onDeleteCard={deleteCard}
                         />
                     </Box>
                 ) : (

@@ -162,6 +162,19 @@ export const useCards = () => {
     })
   }
 
+  const deleteCard = (cardId: string) => {
+    const updatedCards = cards.filter(card => card.id !== cardId)
+    saveCards(updatedCards)
+    
+    // Adjust current card index if necessary
+    const activeCards = getActiveCards()
+    if (currentCardIndex >= activeCards.length && activeCards.length > 0) {
+      setCurrentCardIndex(activeCards.length - 1)
+    } else if (activeCards.length === 0) {
+      setCurrentCardIndex(0)
+    }
+  }
+
   return {
     cards,
     currentCardIndex,
@@ -177,5 +190,6 @@ export const useCards = () => {
     toggleIncludeKnownWords,
     exportProgress,
     importProgress,
+    deleteCard,
   }
 }
