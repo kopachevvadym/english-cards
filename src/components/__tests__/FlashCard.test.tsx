@@ -3,6 +3,30 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { FlashCard } from '../FlashCard'
 import { Card } from '@/types/card'
 
+// Mock the text-to-speech hook
+jest.mock('@/hooks/useTextToSpeech', () => ({
+  useTextToSpeech: () => ({
+    speak: jest.fn(),
+    stop: jest.fn(),
+    toggle: jest.fn(),
+    isSupported: true,
+    isLoading: false,
+    isSpeaking: false,
+    voices: []
+  })
+}))
+
+// Mock speechSynthesis API
+Object.defineProperty(window, 'speechSynthesis', {
+  writable: true,
+  value: {
+    speak: jest.fn(),
+    cancel: jest.fn(),
+    getVoices: jest.fn(() => []),
+    onvoiceschanged: null
+  }
+})
+
 describe('FlashCard', () => {
   const mockOnMarkKnown = jest.fn()
   const mockOnMarkUnknown = jest.fn()

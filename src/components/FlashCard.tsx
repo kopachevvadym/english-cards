@@ -8,12 +8,16 @@ import {
   Box,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material'
 import {
   Check as CheckIcon,
   Close as CloseIcon,
+  VolumeUp as VolumeUpIcon,
+  Stop as StopIcon,
 } from '@mui/icons-material'
 import { Card as CardType } from '@/types/card'
+import { useTextToSpeech } from '@/hooks/useTextToSpeech'
 
 interface FlashCardProps {
   card: CardType
@@ -24,6 +28,7 @@ interface FlashCardProps {
 
 export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFirst = false }: FlashCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  const { toggle, isSupported, isLoading, isSpeaking } = useTextToSpeech()
 
   const handleCardClick = () => {
     setIsFlipped(!isFlipped)
@@ -31,6 +36,12 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
 
   const handleReset = () => {
     setIsFlipped(false)
+  }
+
+  const handleToggleSpeak = (text: string, isEnglish: boolean = true) => {
+    // Let the hook auto-detect language, but provide hint for English
+    const lang = isEnglish ? 'en-US' : undefined
+    toggle(text, lang)
   }
 
   return (
@@ -75,34 +86,95 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
               p: { xs: 2, sm: 3 }
             }}
           >
-            <Typography 
-              variant="h4" 
-              component="div" 
-              gutterBottom
-              sx={{ 
-                fontSize: { xs: '1.8rem', sm: '2.125rem' },
-                wordBreak: 'break-word',
-                hyphens: 'auto'
-              }}
-            >
-              {showTranslationFirst ? card.translation : card.word}
-            </Typography>
-            
-            {(showTranslationFirst ? card.exampleTranslation : card.example) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography 
-                variant="body1" 
+                variant="h4" 
+                component="div"
                 sx={{ 
-                  opacity: 0.9, 
-                  mt: { xs: 1, sm: 2 }, 
-                  mb: { xs: 1, sm: 2 },
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  fontStyle: 'italic',
-                  textAlign: 'center',
-                  px: 2
+                  fontSize: { xs: '1.8rem', sm: '2.125rem' },
+                  wordBreak: 'break-word',
+                  hyphens: 'auto'
                 }}
               >
-                "{showTranslationFirst ? card.exampleTranslation : card.example}"
+                {showTranslationFirst ? card.translation : card.word}
               </Typography>
+              {isSupported && (
+                <Tooltip title={isSpeaking ? "Stop pronunciation" : "Listen to pronunciation"} arrow>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleSpeak(
+                        showTranslationFirst ? card.translation : card.word,
+                        !showTranslationFirst
+                      )
+                    }}
+                    disabled={isLoading}
+                    sx={{
+                      color: 'white',
+                      bgcolor: isSpeaking ? 'rgba(244,67,54,0.3)' : 'rgba(255,255,255,0.2)',
+                      '&:hover': { bgcolor: isSpeaking ? 'rgba(244,67,54,0.4)' : 'rgba(255,255,255,0.3)' },
+                      '&:disabled': { bgcolor: 'rgba(255,255,255,0.1)' },
+                      width: { xs: 36, sm: 32 },
+                      height: { xs: 36, sm: 32 }
+                    }}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={16} sx={{ color: 'white' }} />
+                    ) : isSpeaking ? (
+                      <StopIcon sx={{ fontSize: { xs: '1.2rem', sm: '1rem' } }} />
+                    ) : (
+                      <VolumeUpIcon sx={{ fontSize: { xs: '1.2rem', sm: '1rem' } }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+            
+            {(showTranslationFirst ? card.exampleTranslation : card.example) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 } }}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    opacity: 0.9, 
+                    fontSize: { xs: '0.9rem', sm: '1rem' },
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    px: 2
+                  }}
+                >
+                  "{showTranslationFirst ? card.exampleTranslation : card.example}"
+                </Typography>
+                {isSupported && (
+                  <Tooltip title={isSpeaking ? "Stop example" : "Listen to example"} arrow>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleSpeak(
+                          showTranslationFirst ? card.exampleTranslation! : card.example!,
+                          !showTranslationFirst
+                        )
+                      }}
+                      disabled={isLoading}
+                      sx={{
+                        color: 'white',
+                        bgcolor: isSpeaking ? 'rgba(244,67,54,0.25)' : 'rgba(255,255,255,0.15)',
+                        '&:hover': { bgcolor: isSpeaking ? 'rgba(244,67,54,0.35)' : 'rgba(255,255,255,0.25)' },
+                        '&:disabled': { bgcolor: 'rgba(255,255,255,0.1)' },
+                        width: { xs: 28, sm: 24 },
+                        height: { xs: 28, sm: 24 }
+                      }}
+                    >
+                      {isLoading ? (
+                        <CircularProgress size={12} sx={{ color: 'white' }} />
+                      ) : isSpeaking ? (
+                        <StopIcon sx={{ fontSize: { xs: '0.9rem', sm: '0.8rem' } }} />
+                      ) : (
+                        <VolumeUpIcon sx={{ fontSize: { xs: '0.9rem', sm: '0.8rem' } }} />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             )}
             
             <Typography 
@@ -189,34 +261,95 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
               p: { xs: 2, sm: 3 }
             }}
           >
-            <Typography 
-              variant="h4" 
-              component="div" 
-              gutterBottom
-              sx={{ 
-                fontSize: { xs: '1.8rem', sm: '2.125rem' },
-                wordBreak: 'break-word',
-                hyphens: 'auto'
-              }}
-            >
-              {showTranslationFirst ? card.word : card.translation}
-            </Typography>
-            
-            {(showTranslationFirst ? card.example : card.exampleTranslation) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography 
-                variant="body1" 
+                variant="h4" 
+                component="div"
                 sx={{ 
-                  opacity: 0.9, 
-                  mt: { xs: 1, sm: 2 }, 
-                  mb: { xs: 1, sm: 1 },
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  fontStyle: 'italic',
-                  textAlign: 'center',
-                  px: 2
+                  fontSize: { xs: '1.8rem', sm: '2.125rem' },
+                  wordBreak: 'break-word',
+                  hyphens: 'auto'
                 }}
               >
-                "{showTranslationFirst ? card.example : card.exampleTranslation}"
+                {showTranslationFirst ? card.word : card.translation}
               </Typography>
+              {isSupported && (
+                <Tooltip title={isSpeaking ? "Stop pronunciation" : "Listen to pronunciation"} arrow>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleSpeak(
+                        showTranslationFirst ? card.word : card.translation,
+                        showTranslationFirst
+                      )
+                    }}
+                    disabled={isLoading}
+                    sx={{
+                      color: 'white',
+                      bgcolor: isSpeaking ? 'rgba(244,67,54,0.3)' : 'rgba(255,255,255,0.2)',
+                      '&:hover': { bgcolor: isSpeaking ? 'rgba(244,67,54,0.4)' : 'rgba(255,255,255,0.3)' },
+                      '&:disabled': { bgcolor: 'rgba(255,255,255,0.1)' },
+                      width: { xs: 36, sm: 32 },
+                      height: { xs: 36, sm: 32 }
+                    }}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={16} sx={{ color: 'white' }} />
+                    ) : isSpeaking ? (
+                      <StopIcon sx={{ fontSize: { xs: '1.2rem', sm: '1rem' } }} />
+                    ) : (
+                      <VolumeUpIcon sx={{ fontSize: { xs: '1.2rem', sm: '1rem' } }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+            
+            {(showTranslationFirst ? card.example : card.exampleTranslation) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 1 } }}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    opacity: 0.9, 
+                    fontSize: { xs: '0.9rem', sm: '1rem' },
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    px: 2
+                  }}
+                >
+                  "{showTranslationFirst ? card.example : card.exampleTranslation}"
+                </Typography>
+                {isSupported && (
+                  <Tooltip title={isSpeaking ? "Stop example" : "Listen to example"} arrow>
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleSpeak(
+                          showTranslationFirst ? card.example! : card.exampleTranslation!,
+                          showTranslationFirst
+                        )
+                      }}
+                      disabled={isLoading}
+                      sx={{
+                        color: 'white',
+                        bgcolor: isSpeaking ? 'rgba(244,67,54,0.25)' : 'rgba(255,255,255,0.15)',
+                        '&:hover': { bgcolor: isSpeaking ? 'rgba(244,67,54,0.35)' : 'rgba(255,255,255,0.25)' },
+                        '&:disabled': { bgcolor: 'rgba(255,255,255,0.1)' },
+                        width: { xs: 28, sm: 24 },
+                        height: { xs: 28, sm: 24 }
+                      }}
+                    >
+                      {isLoading ? (
+                        <CircularProgress size={12} sx={{ color: 'white' }} />
+                      ) : isSpeaking ? (
+                        <StopIcon sx={{ fontSize: { xs: '0.9rem', sm: '0.8rem' } }} />
+                      ) : (
+                        <VolumeUpIcon sx={{ fontSize: { xs: '0.9rem', sm: '0.8rem' } }} />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             )}
             
             <Typography 
