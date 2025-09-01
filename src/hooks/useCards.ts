@@ -142,7 +142,7 @@ export const useCards = () => {
   }, [mounted, loadCards])
 
   // Save cards using current provider
-  const saveCards = useCallback(async (newCards: Card[]) => {
+  const saveCards = useCallback(async (newCards: Card[], preserveShuffledOrder = false) => {
     setIsLoading(true)
     setError(null)
 
@@ -150,12 +150,20 @@ export const useCards = () => {
       await providerManager.saveCards(newCards)
       setCards(newCards)
       
-      // Update shuffled order if currently shuffled
-      if (isShuffled) {
+      // Only regenerate shuffled order if explicitly requested (e.g., when importing new cards)
+      if (isShuffled && !preserveShuffledOrder) {
         const activeCards = includeKnownWords 
           ? newCards 
           : newCards.filter(card => !card.isKnown)
         setShuffledOrder(shuffleArray(activeCards))
+      } else if (isShuffled && preserveShuffledOrder) {
+        // Update existing cards in shuffled order while preserving the order
+        setShuffledOrder(prev => 
+          prev.map(shuffledCard => {
+            const updatedCard = newCards.find(card => card.id === shuffledCard.id)
+            return updatedCard || shuffledCard
+          })
+        )
       }
     } catch (error) {
       console.error('Failed to save cards:', error)
@@ -196,7 +204,7 @@ export const useCards = () => {
     }
 
     const updatedCards = [...cards, ...newCards]
-    await saveCards(updatedCards)
+    await saveCards(updatedCards) // Don't preserve order when importing new cards
   }, [cards, saveCards])
 
   const markAsKnown = useCallback(async (cardId: string) => {
@@ -205,7 +213,7 @@ export const useCards = () => {
         ? { ...card, isKnown: true, lastReviewed: new Date() }
         : card
     )
-    await saveCards(updatedCards)
+    await saveCards(updatedCards, true) // Preserve shuffled order
   }, [cards, saveCards])
 
   const markAsUnknown = useCallback(async (cardId: string) => {
@@ -214,22 +222,20 @@ export const useCards = () => {
         ? { ...card, isKnown: false, lastReviewed: new Date() }
         : card
     )
-    await saveCards(updatedCards)
+    await saveCards(updatedCards, true) // Preserve shuffled order
   }, [cards, saveCards])
 
   const getActiveCards = useCallback(() => {
-    const activeCards = includeKnownWords 
-      ? cards 
-      : cards.filter(card => !card.isKnown)
-    
-    if (isShuffled) {
-      // Use the static shuffled order, but filter it to match current active cards
-      return shuffledOrder.filter(card => 
-        activeCards.some(activeCard => activeCard.id === card.id)
-      )
+    if (isShuffled && shuffledOrder.length > 0) {
+      // In shuffled mode, return the complete shuffled order
+      // Navigation logic will handle skipping known cards if needed
+      return shuffledOrder
     }
     
-    return activeCards
+    // In sequential mode, filter based on includeKnownWords setting
+    return includeKnownWords 
+      ? cards 
+      : cards.filter(card => !card.isKnown)
   }, [cards, includeKnownWords, isShuffled, shuffledOrder])
 
   const toggleShuffle = useCallback(() => {
@@ -262,9 +268,50 @@ export const useCards = () => {
     setCurrentCardIndex(0) // Reset to first card when toggling mode
   }, [includeKnownWords, isShuffled, cards, shuffleArray])
 
+  // Helper function to find next valid card index
+  const findNextValidCardIndex = useCallback((currentIndex: number, direction: 'next' | 'prev' = 'next') => {
+    const allCards = getActiveCards()
+    if (allCards.length === 0) return 0
+
+    let nextIndex = currentIndex
+    let attempts = 0
+    const maxAttempts = allCards.length
+
+    do {
+      if (direction === 'next') {
+        nextIndex = nextIndex < allCards.length - 1 ? nextIndex + 1 : 0
+      } else {
+        nextIndex = nextIndex > 0 ? nextIndex - 1 : allCards.length - 1
+      }
+      attempts++
+
+      const card = allCards[nextIndex]
+      if (!card) break
+
+      // If includeKnownWords is true, or card is not known, this is valid
+      if (includeKnownWords || !card.isKnown) {
+        return nextIndex
+      }
+    } while (attempts < maxAttempts)
+
+    // If no valid card found, return current index
+    return currentIndex
+  }, [getActiveCards, includeKnownWords])
+
+  // Navigation helpers
+  const navigateToNext = useCallback(() => {
+    const nextIndex = findNextValidCardIndex(currentCardIndex, 'next')
+    setCurrentCardIndex(nextIndex)
+  }, [currentCardIndex, findNextValidCardIndex])
+
+  const navigateToPrevious = useCallback(() => {
+    const prevIndex = findNextValidCardIndex(currentCardIndex, 'prev')
+    setCurrentCardIndex(prevIndex)
+  }, [currentCardIndex, findNextValidCardIndex])
+
   const resetProgress = useCallback(async () => {
     const resetCards = cards.map(card => ({ ...card, isKnown: false }))
-    await saveCards(resetCards)
+    await saveCards(resetCards, true) // Preserve shuffled order when resetting progress
     setCurrentCardIndex(0)
   }, [cards, saveCards])
 
@@ -310,7 +357,7 @@ export const useCards = () => {
           }))
           
           // Replace current cards with imported ones
-          await saveCards(importedCards)
+          await saveCards(importedCards) // Don't preserve order when importing progress
           setCurrentCardIndex(0)
           resolve()
         } catch (error) {
@@ -486,6 +533,11 @@ export const useCards = () => {
     error,
     refreshCards,
     getProviderInfo,
+    
+    // Navigation helpers
+    navigateToNext,
+    navigateToPrevious,
+    findNextValidCardIndex,
     
     // Provider manager access for advanced use cases
     providerManager

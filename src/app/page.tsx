@@ -40,11 +40,13 @@ import {
 import { FlashCard } from '@/components/FlashCard'
 import { ImportDialog } from '@/components/ImportDialog'
 import { AddWordDialog } from '@/components/AddWordDialog'
+import { EditWordDialog } from '@/components/EditWordDialog'
 import { WordList } from '@/components/WordList'
 import { GameStats } from '@/components/GameStats'
 import { SettingsDialog } from '@/components/SettingsDialog'
 import { useCards } from '@/hooks/useCards'
 import { useSettings } from '@/contexts/SettingsContext'
+import { Card } from '@/types/card'
 
 export default function Home() {
     const {
@@ -64,12 +66,16 @@ export default function Home() {
         importProgress,
         deleteCard,
         updateCard,
+        navigateToNext,
+        navigateToPrevious,
     } = useCards()
 
     const { dataProvider, isValidConfiguration, showTranslationFirst, setShowTranslationFirst } = useSettings()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
+    const [editWordDialogOpen, setEditWordDialogOpen] = useState(false)
+    const [editingCard, setEditingCard] = useState<Card | null>(null)
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null)
@@ -81,36 +87,26 @@ export default function Home() {
     const progress = cards.length > 0 ? ((cards.length - unknownCards.length) / cards.length) * 100 : 0
 
     const handleNext = () => {
-        if (currentCardIndex < activeCards.length - 1) {
-            setCurrentCardIndex(currentCardIndex + 1)
-        } else {
-            setCurrentCardIndex(0)
-        }
+        navigateToNext()
     }
 
     const handlePrevious = () => {
-        if (currentCardIndex > 0) {
-            setCurrentCardIndex(currentCardIndex - 1)
-        } else {
-            setCurrentCardIndex(activeCards.length - 1)
+        navigateToPrevious()
+    }
+
+    const handleMarkKnown = async () => {
+        if (currentCard) {
+            await markAsKnown(currentCard.id)
+            // Navigate to next card after marking
+            navigateToNext()
         }
     }
 
-    const handleMarkKnown = () => {
+    const handleMarkUnknown = async () => {
         if (currentCard) {
-            markAsKnown(currentCard.id)
-            if (activeCards.length > 1) {
-                handleNext()
-            } else {
-                setCurrentCardIndex(0)
-            }
-        }
-    }
-
-    const handleMarkUnknown = () => {
-        if (currentCard) {
-            markAsUnknown(currentCard.id)
-            handleNext()
+            await markAsUnknown(currentCard.id)
+            // Navigate to next card after marking
+            navigateToNext()
         }
     }
 
@@ -175,6 +171,29 @@ export default function Home() {
     const handleDataProviderSettings = () => {
         setSettingsDialogOpen(true)
         setSettingsAnchorEl(null)
+    }
+
+    const handleEditCard = () => {
+        if (currentCard) {
+            setEditingCard(currentCard)
+            setEditWordDialogOpen(true)
+        }
+    }
+
+    const handleDeleteCard = async () => {
+        if (currentCard) {
+            await deleteCard(currentCard.id)
+            // Navigate to next card after deletion, or previous if it was the last card
+            if (currentCardIndex >= activeCards.length - 1 && currentCardIndex > 0) {
+                setCurrentCardIndex(currentCardIndex - 1)
+            }
+        }
+    }
+
+    const handleUpdateCard = async (updatedCard: Card) => {
+        await updateCard(updatedCard)
+        setEditWordDialogOpen(false)
+        setEditingCard(null)
     }
 
 
@@ -529,6 +548,8 @@ export default function Home() {
                                     card={currentCard}
                                     onMarkKnown={handleMarkKnown}
                                     onMarkUnknown={handleMarkUnknown}
+                                    onEdit={handleEditCard}
+                                    onDelete={handleDeleteCard}
                                     showTranslationFirst={showTranslationFirst}
                                 />
 
@@ -549,6 +570,16 @@ export default function Home() {
                 open={addWordDialogOpen}
                 onClose={() => setAddWordDialogOpen(false)}
                 onAddWord={handleAddSingleWord}
+            />
+
+            <EditWordDialog
+                open={editWordDialogOpen}
+                card={editingCard}
+                onClose={() => {
+                    setEditWordDialogOpen(false)
+                    setEditingCard(null)
+                }}
+                onUpdateWord={handleUpdateCard}
             />
 
             <ImportDialog

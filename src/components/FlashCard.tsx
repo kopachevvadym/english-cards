@@ -9,12 +9,19 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material'
 import {
   Check as CheckIcon,
   Close as CloseIcon,
   VolumeUp as VolumeUpIcon,
   Stop as StopIcon,
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { Card as CardType } from '@/types/card'
 import { useTextToSpeech } from '@/hooks/useTextToSpeech'
@@ -23,12 +30,17 @@ interface FlashCardProps {
   card: CardType
   onMarkKnown: () => void
   onMarkUnknown: () => void
+  onEdit?: () => void
+  onDelete?: () => void
   showTranslationFirst?: boolean
 }
 
-export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFirst = false }: FlashCardProps) => {
+export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, onEdit, onDelete, showTranslationFirst = false }: FlashCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null)
   const { toggle, isSupported, isLoading, isSpeaking } = useTextToSpeech()
+  
+  const isMenuOpen = Boolean(menuAnchorEl)
 
   const handleCardClick = () => {
     setIsFlipped(!isFlipped)
@@ -42,6 +54,25 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
     // Let the hook auto-detect language, but provide hint for English
     const lang = isEnglish ? 'en-US' : undefined
     toggle(text, lang)
+  }
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation()
+    setMenuAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null)
+  }
+
+  const handleEdit = () => {
+    handleMenuClose()
+    onEdit?.()
+  }
+
+  const handleDelete = () => {
+    handleMenuClose()
+    onDelete?.()
   }
 
   return (
@@ -86,6 +117,25 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
               p: { xs: 2, sm: 3 }
             }}
           >
+            {/* Menu Button */}
+            {(onEdit || onDelete) && (
+              <IconButton
+                onClick={handleMenuOpen}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                  width: 32,
+                  height: 32,
+                  zIndex: 1
+                }}
+              >
+                <MoreVertIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            )}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography 
                 variant="h4" 
@@ -258,9 +308,29 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
                 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
               color: 'white',
+              position: 'relative',
               p: { xs: 2, sm: 3 }
             }}
           >
+            {/* Menu Button */}
+            {(onEdit || onDelete) && (
+              <IconButton
+                onClick={handleMenuOpen}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.1)',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+                  width: 32,
+                  height: 32,
+                  zIndex: 1
+                }}
+              >
+                <MoreVertIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            )}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography 
                 variant="h4" 
@@ -408,6 +478,38 @@ export const FlashCard = ({ card, onMarkKnown, onMarkUnknown, showTranslationFir
           </CardContent>
         )}
       </Card>
+      
+      {/* Context Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={isMenuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        {onEdit && (
+          <MenuItem onClick={handleEdit}>
+            <ListItemIcon>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Edit Word</ListItemText>
+          </MenuItem>
+        )}
+        {onDelete && (
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+            <ListItemIcon>
+              <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+            </ListItemIcon>
+            <ListItemText>Delete Word</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
     </Box>
   )
 }
