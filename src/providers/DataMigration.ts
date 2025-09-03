@@ -680,8 +680,7 @@ export class DataMigrationService {
       word: card.word,
       translation: card.translation,
       isKnown: card.isKnown,
-      example: card.example,
-      exampleTranslation: card.exampleTranslation
+      examples: card.examples
     })).sort((a, b) => a.id.localeCompare(b.id)))
     
     // Simple hash function for checksum

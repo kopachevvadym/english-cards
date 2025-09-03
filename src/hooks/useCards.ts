@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card } from '@/types/card'
+import { Card, Example } from '@/types/card'
 import { DataProviderManager } from '@/providers/DataProviderManager'
 import { LocalStorageProvider } from '@/providers/LocalStorageProvider'
 import { useSettings } from '@/contexts/SettingsContext'
@@ -177,7 +177,7 @@ export const useCards = () => {
     }
   }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
 
-  const importCards = useCallback(async (jsonData: Record<string, string> | Array<{word: string, translation: string, example?: string, exampleTranslation?: string}>) => {
+  const importCards = useCallback(async (jsonData: Record<string, string> | Array<{word: string, translation: string, examples?: Example[]}>) => {
     const timestamp = new Date().getTime()
     let newCards: Card[]
 
@@ -187,8 +187,7 @@ export const useCards = () => {
         id: `card-${timestamp}-${index}`,
         word: cardData.word,
         translation: cardData.translation,
-        example: cardData.example,
-        exampleTranslation: cardData.exampleTranslation,
+        examples: cardData.examples || [],
         isKnown: false,
         createdAt: new Date(),
       }))
@@ -198,6 +197,7 @@ export const useCards = () => {
         id: `card-${timestamp}-${index}`,
         word: word,
         translation: translation,
+        examples: [],
         isKnown: false,
         createdAt: new Date(),
       }))

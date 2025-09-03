@@ -10,7 +10,7 @@ describe('AddWordDialog', () => {
     jest.clearAllMocks()
   })
 
-  it('should render all input fields including example fields', () => {
+  it('should render word and translation fields', () => {
     render(
       <AddWordDialog
         open={true}
@@ -21,11 +21,11 @@ describe('AddWordDialog', () => {
 
     expect(screen.getByLabelText('Word')).toBeInTheDocument()
     expect(screen.getByLabelText('Translation')).toBeInTheDocument()
-    expect(screen.getByLabelText('Example (optional)')).toBeInTheDocument()
-    expect(screen.getByLabelText('Example Translation (optional)')).toBeInTheDocument()
+    expect(screen.getByText('Examples')).toBeInTheDocument()
+    expect(screen.getByText('Add Example')).toBeInTheDocument()
   })
 
-  it('should call onAddWord with all fields when adding a word with examples', async () => {
+  it('should call onAddWord with empty examples array when no examples added', async () => {
     render(
       <AddWordDialog
         open={true}
@@ -36,8 +36,6 @@ describe('AddWordDialog', () => {
 
     fireEvent.change(screen.getByLabelText('Word'), { target: { value: 'hello' } })
     fireEvent.change(screen.getByLabelText('Translation'), { target: { value: 'hola' } })
-    fireEvent.change(screen.getByLabelText('Example (optional)'), { target: { value: 'Hello, how are you?' } })
-    fireEvent.change(screen.getByLabelText('Example Translation (optional)'), { target: { value: 'Hola, ¿cómo estás?' } })
 
     fireEvent.click(screen.getByText('Add Word'))
 
@@ -45,13 +43,12 @@ describe('AddWordDialog', () => {
       expect(mockOnAddWord).toHaveBeenCalledWith(
         'hello',
         'hola',
-        'Hello, how are you?',
-        'Hola, ¿cómo estás?'
+        []
       )
     })
   })
 
-  it('should call onAddWord with undefined for empty example fields', async () => {
+  it('should allow adding and removing examples', async () => {
     render(
       <AddWordDialog
         open={true}
@@ -60,6 +57,18 @@ describe('AddWordDialog', () => {
       />
     )
 
+    // Add an example
+    fireEvent.click(screen.getByText('Add Example'))
+    
+    expect(screen.getByText('Example 1')).toBeInTheDocument()
+    expect(screen.getByLabelText('Example Text')).toBeInTheDocument()
+    expect(screen.getByLabelText('Example Translation')).toBeInTheDocument()
+
+    // Fill in the example
+    fireEvent.change(screen.getByLabelText('Example Text'), { target: { value: 'Hello, how are you?' } })
+    fireEvent.change(screen.getByLabelText('Example Translation'), { target: { value: 'Hola, ¿cómo estás?' } })
+
+    // Fill in word and translation
     fireEvent.change(screen.getByLabelText('Word'), { target: { value: 'hello' } })
     fireEvent.change(screen.getByLabelText('Translation'), { target: { value: 'hola' } })
 
@@ -69,8 +78,7 @@ describe('AddWordDialog', () => {
       expect(mockOnAddWord).toHaveBeenCalledWith(
         'hello',
         'hola',
-        undefined,
-        undefined
+        [{ id: expect.any(String), text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }]
       )
     })
   })
@@ -86,8 +94,6 @@ describe('AddWordDialog', () => {
 
     fireEvent.change(screen.getByLabelText('Word'), { target: { value: 'hello' } })
     fireEvent.change(screen.getByLabelText('Translation'), { target: { value: 'hola' } })
-    fireEvent.change(screen.getByLabelText('Example (optional)'), { target: { value: 'Hello, how are you?' } })
-    fireEvent.change(screen.getByLabelText('Example Translation (optional)'), { target: { value: 'Hola, ¿cómo estás?' } })
 
     fireEvent.click(screen.getByText('Cancel'))
 

@@ -12,11 +12,12 @@ import {
   Box,
   Alert,
 } from '@mui/material'
+import { Example } from '@/types/card'
 
 interface ImportDialogProps {
   open: boolean
   onClose: () => void
-  onImport: (data: Record<string, string> | Array<{word: string, translation: string, example?: string, exampleTranslation?: string}>) => void
+  onImport: (data: Record<string, string> | Array<{word: string, translation: string, examples?: Example[]}>) => void
 }
 
 export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => {
@@ -35,12 +36,18 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           item !== null &&
           typeof item.word === 'string' && 
           typeof item.translation === 'string' &&
-          (item.example === undefined || typeof item.example === 'string') &&
-          (item.exampleTranslation === undefined || typeof item.exampleTranslation === 'string')
+          (item.examples === undefined || (Array.isArray(item.examples) && 
+            item.examples.every((ex: any) => 
+              typeof ex === 'object' && 
+              typeof ex.id === 'string' && 
+              typeof ex.text === 'string' && 
+              typeof ex.translation === 'string'
+            )
+          ))
         )
         
         if (!isValid) {
-          setError('Array items must have "word" and "translation" strings, with optional "example" and "exampleTranslation" strings')
+          setError('Array items must have "word" and "translation" strings, with optional "examples" array containing objects with id, text, and translation strings')
           return
         }
         

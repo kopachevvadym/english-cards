@@ -1,3 +1,9 @@
+export interface Example {
+  id: string
+  text: string
+  translation: string
+}
+
 export interface Card {
   id: string
   word: string
@@ -5,6 +11,5 @@ export interface Card {
   isKnown: boolean
   createdAt: Date
   lastReviewed?: Date
-  example?: string
-  exampleTranslation?: string
+  examples: Example[]
 }

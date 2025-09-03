@@ -342,8 +342,9 @@ describe('End-to-End Provider Workflows', () => {
         isKnown: false,
         createdAt: new Date('2023-01-01T10:00:00Z'),
         lastReviewed: new Date('2023-01-02T15:30:00Z'),
-        example: 'This is a complex example',
-        exampleTranslation: 'Este es un ejemplo complejo'
+        examples: [
+          { id: 'ex1', text: 'This is a complex example', translation: 'Este es un ejemplo complejo' }
+        ]
       }
 
       const savedCard = await manager.saveCard(complexCard)
@@ -359,8 +360,7 @@ describe('End-to-End Provider Workflows', () => {
       expect(retrievedCard.isKnown).toBe(complexCard.isKnown)
       expect(retrievedCard.createdAt).toEqual(complexCard.createdAt)
       expect(retrievedCard.lastReviewed).toEqual(complexCard.lastReviewed)
-      expect(retrievedCard.example).toBe(complexCard.example)
-      expect(retrievedCard.exampleTranslation).toBe(complexCard.exampleTranslation)
+      expect(retrievedCard.examples).toEqual(complexCard.examples)
     })
 
     it('should handle concurrent operations safely', async () => {

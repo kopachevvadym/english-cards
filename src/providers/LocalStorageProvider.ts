@@ -283,13 +283,24 @@ export class LocalStorageProvider implements IDataProviderWithStatus {
       }
     }
 
-    if (card.example !== undefined && typeof card.example !== 'string') {
-      throw new Error('Card example must be a string or undefined')
+    if (!Array.isArray(card.examples)) {
+      throw new Error('Card examples must be an array')
     }
 
-    if (card.exampleTranslation !== undefined && typeof card.exampleTranslation !== 'string') {
-      throw new Error('Card exampleTranslation must be a string or undefined')
-    }
+    card.examples.forEach((example: any, index: number) => {
+      if (!example || typeof example !== 'object') {
+        throw new Error(`Example at index ${index} must be an object`)
+      }
+      if (typeof example.id !== 'string') {
+        throw new Error(`Example at index ${index} must have a string id`)
+      }
+      if (typeof example.text !== 'string') {
+        throw new Error(`Example at index ${index} must have a string text`)
+      }
+      if (typeof example.translation !== 'string') {
+        throw new Error(`Example at index ${index} must have a string translation`)
+      }
+    })
   }
 
   /**
@@ -300,11 +311,12 @@ export class LocalStorageProvider implements IDataProviderWithStatus {
       throw new Error('Invalid card data')
     }
 
-    // Transform date strings to Date objects
+    // Transform date strings to Date objects and ensure examples array exists
     const card: Card = {
       ...cardData,
       createdAt: new Date(cardData.createdAt),
       lastReviewed: cardData.lastReviewed ? new Date(cardData.lastReviewed) : undefined,
+      examples: cardData.examples || [],
     }
 
     // Validate the transformed card

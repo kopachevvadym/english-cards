@@ -46,7 +46,7 @@ import { GameStats } from '@/components/GameStats'
 import { SettingsDialog } from '@/components/SettingsDialog'
 import { useCards } from '@/hooks/useCards'
 import { useSettings } from '@/contexts/SettingsContext'
-import { Card } from '@/types/card'
+import { Card, Example } from '@/types/card'
 
 export default function Home() {
     const {
@@ -110,12 +110,11 @@ export default function Home() {
         }
     }
 
-    const handleAddSingleWord = (word: string, translation: string, example?: string, exampleTranslation?: string) => {
+    const handleAddSingleWord = (word: string, translation: string, examples: Example[]) => {
         const cardData = [{
             word,
             translation,
-            example,
-            exampleTranslation
+            examples
         }]
         importCards(cardData)
     }

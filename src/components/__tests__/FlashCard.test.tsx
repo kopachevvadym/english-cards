@@ -41,12 +41,13 @@ describe('FlashCard', () => {
     translation: 'hola',
     isKnown: false,
     createdAt: new Date(),
+    examples: [],
   }
 
   it('should display example on front side when available', () => {
     const cardWithExample: Card = {
       ...baseCard,
-      example: 'Hello, how are you?',
+      examples: [{ id: 'ex1', text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }],
     }
 
     render(
@@ -64,7 +65,7 @@ describe('FlashCard', () => {
   it('should display example translation on back side when available', () => {
     const cardWithExampleTranslation: Card = {
       ...baseCard,
-      exampleTranslation: 'Hola, ¿cómo estás?',
+      examples: [{ id: 'ex1', text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }],
     }
 
     render(
@@ -98,8 +99,7 @@ describe('FlashCard', () => {
   it('should display both example and example translation when both are available', () => {
     const cardWithBothExamples: Card = {
       ...baseCard,
-      example: 'Hello, how are you?',
-      exampleTranslation: 'Hola, ¿cómo estás?',
+      examples: [{ id: 'ex1', text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }],
     }
 
     render(

@@ -6,8 +6,9 @@ const mockCard: Card = {
   id: 'test-card-1',
   word: 'hello',
   translation: 'hola',
-  example: 'Hello, how are you?',
-  exampleTranslation: 'Hola, ¿cómo estás?',
+  examples: [
+    { id: 'ex1', text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' }
+  ],
   isKnown: false,
   createdAt: new Date('2023-01-01'),
 }
@@ -33,6 +34,7 @@ describe('EditWordDialog', () => {
     expect(screen.getByText('Edit Word')).toBeInTheDocument()
     expect(screen.getByDisplayValue('hello')).toBeInTheDocument()
     expect(screen.getByDisplayValue('hola')).toBeInTheDocument()
+    expect(screen.getByText('Examples')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Hello, how are you?')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Hola, ¿cómo estás?')).toBeInTheDocument()
   })
@@ -104,6 +106,7 @@ describe('EditWordDialog', () => {
         ...mockCard,
         word: 'hi',
         translation: 'hola amigo',
+        examples: mockCard.examples,
       })
     })
   })
@@ -164,11 +167,10 @@ describe('EditWordDialog', () => {
     expect(mockOnUpdateWord).not.toHaveBeenCalled()
   })
 
-  it('handles optional fields correctly', async () => {
+  it('handles adding new examples', async () => {
     const cardWithoutExamples: Card = {
       ...mockCard,
-      example: undefined,
-      exampleTranslation: undefined,
+      examples: [],
     }
 
     render(
@@ -180,8 +182,11 @@ describe('EditWordDialog', () => {
       />
     )
 
-    const exampleInput = screen.getByLabelText('Example (optional)')
-    const exampleTranslationInput = screen.getByLabelText('Example Translation (optional)')
+    const addExampleButton = screen.getByText('Add Example')
+    fireEvent.click(addExampleButton)
+
+    const exampleInput = screen.getByLabelText('Example Text')
+    const exampleTranslationInput = screen.getByLabelText('Example Translation')
     const updateButton = screen.getByText('Update Word')
 
     fireEvent.change(exampleInput, { target: { value: 'New example' } })
@@ -191,13 +196,12 @@ describe('EditWordDialog', () => {
     await waitFor(() => {
       expect(mockOnUpdateWord).toHaveBeenCalledWith({
         ...cardWithoutExamples,
-        example: 'New example',
-        exampleTranslation: 'Nuevo ejemplo',
+        examples: [{ id: expect.any(String), text: 'New example', translation: 'Nuevo ejemplo' }],
       })
     })
   })
 
-  it('removes optional fields when they are empty', async () => {
+  it('filters out empty examples when updating', async () => {
     render(
       <EditWordDialog
         open={true}
@@ -207,19 +211,17 @@ describe('EditWordDialog', () => {
       />
     )
 
-    const exampleInput = screen.getByDisplayValue('Hello, how are you?')
-    const exampleTranslationInput = screen.getByDisplayValue('Hola, ¿cómo estás?')
-    const updateButton = screen.getByText('Update Word')
+    // Add an empty example
+    const addExampleButton = screen.getByText('Add Example')
+    fireEvent.click(addExampleButton)
 
-    fireEvent.change(exampleInput, { target: { value: '' } })
-    fireEvent.change(exampleTranslationInput, { target: { value: '' } })
+    const updateButton = screen.getByText('Update Word')
     fireEvent.click(updateButton)
 
     await waitFor(() => {
       expect(mockOnUpdateWord).toHaveBeenCalledWith({
         ...mockCard,
-        example: undefined,
-        exampleTranslation: undefined,
+        examples: mockCard.examples, // Only the original example should remain
       })
     })
   })

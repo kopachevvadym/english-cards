@@ -120,7 +120,7 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByText('Import'))
 
     await waitFor(() => {
-      expect(screen.getByText('Array items must have "word" and "translation" strings, with optional "example" and "exampleTranslation" strings')).toBeInTheDocument()
+      expect(screen.getByText('Array items must have "word" and "translation" strings, with optional "examples" array containing objects with id, text, and translation strings')).toBeInTheDocument()
     })
 
     expect(mockOnImport).not.toHaveBeenCalled()

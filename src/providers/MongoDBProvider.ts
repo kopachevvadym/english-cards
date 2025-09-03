@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb'
-import { Card } from '../types/card'
+import { Card, Example } from '../types/card'
 import { IDataProvider, IDataProviderWithStatus, MongoDBConfig, DataProviderError, ProviderError, ProviderStatus, ProviderStatusInfo } from './types'
 
 /**
@@ -13,8 +13,7 @@ interface CardDocument {
   isKnown: boolean
   createdAt: Date
   lastReviewed?: Date
-  example?: string
-  exampleTranslation?: string
+  examples: Example[]
 }
 
 /**
@@ -174,8 +173,7 @@ export class MongoDBProvider implements IDataProviderWithStatus {
       isKnown: doc.isKnown,
       createdAt: doc.createdAt,
       lastReviewed: doc.lastReviewed,
-      example: doc.example,
-      exampleTranslation: doc.exampleTranslation
+      examples: doc.examples || []
     }
   }
 
@@ -190,8 +188,7 @@ export class MongoDBProvider implements IDataProviderWithStatus {
       isKnown: card.isKnown,
       createdAt: card.createdAt,
       lastReviewed: card.lastReviewed,
-      example: card.example,
-      exampleTranslation: card.exampleTranslation
+      examples: card.examples
     }
   }
 
