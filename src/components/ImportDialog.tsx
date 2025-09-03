@@ -17,14 +17,15 @@ import { Example } from '@/types/card'
 interface ImportDialogProps {
   open: boolean
   onClose: () => void
-  onImport: (data: Record<string, string> | Array<{word: string, translation: string, examples?: Example[]}>) => void
+  onImport: (data: Record<string, string> | Array<{word: string, translation: string, examples?: Example[]}>) => Promise<{imported: number, skipped: number}>
 }
 
 export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => {
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState('')
+  const [importResult, setImportResult] = useState<{imported: number, skipped: number} | null>(null)
 
-  const handleImport = () => {
+  const handleImport = async () => {
     try {
       const data = JSON.parse(jsonText)
       
@@ -51,7 +52,8 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           return
         }
         
-        onImport(data)
+        const result = await onImport(data)
+        setImportResult(result)
       } else if (typeof data === 'object' && data !== null) {
         // Simple object format (backward compatibility)
         const isValid = Object.entries(data).every(([key, value]) =>
@@ -63,7 +65,8 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           return
         }
         
-        onImport(data)
+        const result = await onImport(data)
+        setImportResult(result)
       } else {
         setError('JSON must be an object with word-translation pairs or an array of card objects')
         return
@@ -71,7 +74,12 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
 
       setJsonText('')
       setError('')
-      onClose()
+      
+      // Show result for a moment before closing
+      setTimeout(() => {
+        setImportResult(null)
+        onClose()
+      }, 2000)
     } catch (err) {
       setError('Invalid JSON format')
     }
@@ -80,6 +88,7 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
   const handleClose = () => {
     setJsonText('')
     setError('')
+    setImportResult(null)
     onClose()
   }
 
@@ -128,6 +137,13 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        
+        {importResult && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Import completed! {importResult.imported} words imported
+            {importResult.skipped > 0 && `, ${importResult.skipped} duplicates skipped`}
           </Alert>
         )}
         

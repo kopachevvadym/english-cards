@@ -14,7 +14,7 @@ export const useCards = () => {
   const [includeKnownWords, setIncludeKnownWords] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [shuffledOrder, setShuffledOrder] = useState<Card[]>([]) // Static shuffled order
-  
+
   // Loading states for provider operations
   const [isLoading, setIsLoading] = useState(false)
   const [isSwitchingProvider, setIsSwitchingProvider] = useState(false)
@@ -37,14 +37,14 @@ export const useCards = () => {
     const manager = new DataProviderManager((error: ProviderError) => {
       console.error('Provider error:', error)
       setError(error.message)
-      
+
       // Clear error after 5 seconds
       setTimeout(() => setError(null), 5000)
     })
 
     // Register providers
     manager.registerProvider('localhost', new LocalStorageProvider())
-    
+
     // Only register MongoDB if configuration is valid and we're in a server environment
     if (isValidConfiguration('mongodb') && typeof window === 'undefined') {
       // Dynamic import for MongoDB provider to avoid client-side bundling issues
@@ -69,18 +69,18 @@ export const useCards = () => {
     try {
       const loadedCards = await providerManager.getCards()
       setCards(loadedCards)
-      
+
       // Initialize shuffled order if currently shuffled
       if (isShuffled) {
-        const activeCards = includeKnownWords 
-          ? loadedCards 
+        const activeCards = includeKnownWords
+          ? loadedCards
           : loadedCards.filter(card => !card.isKnown)
         setShuffledOrder(shuffleArray(activeCards))
       }
     } catch (error) {
       console.error('Failed to load cards:', error)
-      const errorMessage = error instanceof ProviderError 
-        ? error.message 
+      const errorMessage = error instanceof ProviderError
+        ? error.message
         : 'Failed to load cards'
       setError(errorMessage)
     } finally {
@@ -117,8 +117,8 @@ export const useCards = () => {
         await loadCards()
       } catch (error) {
         console.error('Failed to switch provider:', error)
-        const errorMessage = error instanceof ProviderError 
-          ? error.message 
+        const errorMessage = error instanceof ProviderError
+          ? error.message
           : `Failed to switch to ${dataProvider} provider`
         setError(errorMessage)
       } finally {
@@ -149,16 +149,16 @@ export const useCards = () => {
     try {
       await providerManager.saveCards(newCards)
       setCards(newCards)
-      
+
       // Only regenerate shuffled order if explicitly requested (e.g., when importing new cards)
       if (isShuffled && !preserveShuffledOrder) {
-        const activeCards = includeKnownWords 
-          ? newCards 
+        const activeCards = includeKnownWords
+          ? newCards
           : newCards.filter(card => !card.isKnown)
         setShuffledOrder(shuffleArray(activeCards))
       } else if (isShuffled && preserveShuffledOrder) {
         // Update existing cards in shuffled order while preserving the order
-        setShuffledOrder(prev => 
+        setShuffledOrder(prev =>
           prev.map(shuffledCard => {
             const updatedCard = newCards.find(card => card.id === shuffledCard.id)
             return updatedCard || shuffledCard
@@ -167,8 +167,8 @@ export const useCards = () => {
       }
     } catch (error) {
       console.error('Failed to save cards:', error)
-      const errorMessage = error instanceof ProviderError 
-        ? error.message 
+      const errorMessage = error instanceof ProviderError
+        ? error.message
         : 'Failed to save cards'
       setError(errorMessage)
       throw error // Re-throw to allow caller to handle
@@ -177,13 +177,13 @@ export const useCards = () => {
     }
   }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
 
-  const importCards = useCallback(async (jsonData: Record<string, string> | Array<{word: string, translation: string, examples?: Example[]}>) => {
+  const importCards = useCallback(async (jsonData: Record<string, string> | Array<{ word: string, translation: string, examples?: Example[] }>) => {
     const timestamp = new Date().getTime()
-    let newCards: Card[]
+    let candidateCards: Card[]
 
     if (Array.isArray(jsonData)) {
       // Handle array format with full card objects
-      newCards = jsonData.map((cardData, index) => ({
+      candidateCards = jsonData.map((cardData, index) => ({
         id: `card-${timestamp}-${index}`,
         word: cardData.word,
         translation: cardData.translation,
@@ -193,7 +193,7 @@ export const useCards = () => {
       }))
     } else {
       // Handle simple object format (backward compatibility)
-      newCards = Object.entries(jsonData).map(([word, translation], index) => ({
+      candidateCards = Object.entries(jsonData).map(([word, translation], index) => ({
         id: `card-${timestamp}-${index}`,
         word: word,
         translation: translation,
@@ -203,8 +203,17 @@ export const useCards = () => {
       }))
     }
 
+    // Filter out duplicates - only add words that don't already exist
+    const existingWords = new Set(cards.map(card => card.word.toLowerCase()))
+    const newCards = candidateCards.filter(card => !existingWords.has(card.word.toLowerCase()))
+
     const updatedCards = [...cards, ...newCards]
     await saveCards(updatedCards) // Don't preserve order when importing new cards
+
+    return {
+      imported: newCards.length,
+      skipped: candidateCards.length - newCards.length
+    }
   }, [cards, saveCards])
 
   const markAsKnown = useCallback(async (cardId: string) => {
@@ -231,40 +240,40 @@ export const useCards = () => {
       // Navigation logic will handle skipping known cards if needed
       return shuffledOrder
     }
-    
+
     // In sequential mode, filter based on includeKnownWords setting
-    return includeKnownWords 
-      ? cards 
+    return includeKnownWords
+      ? cards
       : cards.filter(card => !card.isKnown)
   }, [cards, includeKnownWords, isShuffled, shuffledOrder])
 
   const toggleShuffle = useCallback(() => {
     const newShuffledState = !isShuffled
     setIsShuffled(newShuffledState)
-    
+
     if (newShuffledState) {
       // Create a new shuffled order when enabling shuffle
-      const activeCards = includeKnownWords 
-        ? cards 
+      const activeCards = includeKnownWords
+        ? cards
         : cards.filter(card => !card.isKnown)
       setShuffledOrder(shuffleArray(activeCards))
     }
-    
+
     setCurrentCardIndex(0) // Reset to first card when toggling shuffle
   }, [isShuffled, cards, includeKnownWords, shuffleArray])
 
   const toggleIncludeKnownWords = useCallback(() => {
     const newIncludeKnownWords = !includeKnownWords
     setIncludeKnownWords(newIncludeKnownWords)
-    
+
     // Update shuffled order if currently shuffled
     if (isShuffled) {
-      const activeCards = newIncludeKnownWords 
-        ? cards 
+      const activeCards = newIncludeKnownWords
+        ? cards
         : cards.filter(card => !card.isKnown)
       setShuffledOrder(shuffleArray(activeCards))
     }
-    
+
     setCurrentCardIndex(0) // Reset to first card when toggling mode
   }, [includeKnownWords, isShuffled, cards, shuffleArray])
 
@@ -322,10 +331,10 @@ export const useCards = () => {
       knownCards: cards.filter(card => card.isKnown).length,
       cards: cards
     }
-    
+
     const dataStr = JSON.stringify(exportData, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    
+
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
@@ -343,19 +352,19 @@ export const useCards = () => {
         try {
           const result = e.target?.result as string
           const importData = JSON.parse(result)
-          
+
           // Validate the import data structure
           if (!importData.cards || !Array.isArray(importData.cards)) {
             throw new Error('Invalid progress file format')
           }
-          
+
           // Convert date strings back to Date objects
           const importedCards = importData.cards.map((card: any) => ({
             ...card,
             createdAt: new Date(card.createdAt),
             lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : undefined,
           }))
-          
+
           // Replace current cards with imported ones
           await saveCards(importedCards) // Don't preserve order when importing progress
           setCurrentCardIndex(0)
@@ -375,22 +384,22 @@ export const useCards = () => {
 
     try {
       await providerManager.deleteCard(cardId)
-      
+
       // Update local state
       const updatedCards = cards.filter(card => card.id !== cardId)
       setCards(updatedCards)
-      
+
       // Update shuffled order if currently shuffled
       if (isShuffled) {
         setShuffledOrder(prev => prev.filter(card => card.id !== cardId))
       }
-      
+
       // Adjust current card index if necessary
       // Calculate active cards based on updated cards
-      const activeCards = includeKnownWords 
-        ? updatedCards 
+      const activeCards = includeKnownWords
+        ? updatedCards
         : updatedCards.filter(card => !card.isKnown)
-      
+
       if (currentCardIndex >= activeCards.length && activeCards.length > 0) {
         setCurrentCardIndex(activeCards.length - 1)
       } else if (activeCards.length === 0) {
@@ -398,8 +407,8 @@ export const useCards = () => {
       }
     } catch (error) {
       console.error('Failed to delete card:', error)
-      const errorMessage = error instanceof ProviderError 
-        ? error.message 
+      const errorMessage = error instanceof ProviderError
+        ? error.message
         : 'Failed to delete card'
       setError(errorMessage)
       throw error // Re-throw to allow caller to handle
@@ -423,22 +432,22 @@ export const useCards = () => {
       await providerManager.saveCard(newCard)
       setCards(prevCards => {
         const updatedCards = [...prevCards, newCard]
-        
+
         // Update shuffled order if currently shuffled
         if (isShuffled) {
-          const activeCards = includeKnownWords 
-            ? updatedCards 
+          const activeCards = includeKnownWords
+            ? updatedCards
             : updatedCards.filter(card => !card.isKnown)
           setShuffledOrder(shuffleArray(activeCards))
         }
-        
+
         return updatedCards
       })
       return newCard
     } catch (error) {
       console.error('Failed to add card:', error)
-      const errorMessage = error instanceof ProviderError 
-        ? error.message 
+      const errorMessage = error instanceof ProviderError
+        ? error.message
         : 'Failed to add card'
       setError(errorMessage)
       throw error // Re-throw to allow caller to handle
@@ -455,26 +464,26 @@ export const useCards = () => {
     try {
       await providerManager.updateCard(updatedCard)
       setCards(prevCards => {
-        const newCards = prevCards.map(card => 
+        const newCards = prevCards.map(card =>
           card.id === updatedCard.id ? updatedCard : card
         )
-        
+
         // Update shuffled order if currently shuffled
         if (isShuffled) {
-          setShuffledOrder(prev => 
-            prev.map(card => 
+          setShuffledOrder(prev =>
+            prev.map(card =>
               card.id === updatedCard.id ? updatedCard : card
             )
           )
         }
-        
+
         return newCards
       })
       return updatedCard
     } catch (error) {
       console.error('Failed to update card:', error)
-      const errorMessage = error instanceof ProviderError 
-        ? error.message 
+      const errorMessage = error instanceof ProviderError
+        ? error.message
         : 'Failed to update card'
       setError(errorMessage)
       throw error // Re-throw to allow caller to handle
@@ -524,7 +533,7 @@ export const useCards = () => {
     exportProgress,
     importProgress,
     deleteCard,
-    
+
     // New provider-related functionality
     addCard,
     updateCard,
@@ -533,12 +542,12 @@ export const useCards = () => {
     error,
     refreshCards,
     getProviderInfo,
-    
+
     // Navigation helpers
     navigateToNext,
     navigateToPrevious,
     findNextValidCardIndex,
-    
+
     // Provider manager access for advanced use cases
     providerManager
   }
