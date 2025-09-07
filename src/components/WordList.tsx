@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import {
   Box,
   Paper,
@@ -15,12 +16,16 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  TextField,
+  InputAdornment,
 } from '@mui/material'
 import {
   Check as CheckIcon,
   Undo as UndoIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material'
 import { Card } from '@/types/card'
 import { EditWordDialog } from './EditWordDialog'
@@ -41,6 +46,20 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [cardToEdit, setCardToEdit] = useState<Card | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
+
+  const filteredCards = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) return cards
+    
+    const term = debouncedSearchTerm.toLowerCase().trim()
+    return cards.filter(card => 
+      card.word.toLowerCase().includes(term) ||
+      card.translation.toLowerCase().includes(term) ||
+      (card.example && card.example.toLowerCase().includes(term)) ||
+      (card.exampleTranslation && card.exampleTranslation.toLowerCase().includes(term))
+    )
+  }, [cards, debouncedSearchTerm])
 
   const handleToggleKnown = (card: Card) => {
     if (card.isKnown) {
@@ -96,6 +115,10 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
     setCardToEdit(null)
   }
 
+  const handleClearSearch = () => {
+    setSearchTerm('')
+  }
+
   return (
     <Box sx={{ width: '100%', maxWidth: 800, px: { xs: 1, sm: 0 } }}>
       <Typography 
@@ -109,9 +132,59 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
       >
         All Words ({cards.length})
       </Typography>
+
+      {/* Search Field */}
+      <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search words, translations, or examples..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.secondary' }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={handleClearSearch}
+                  edge="end"
+                  size="small"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              '&:hover': {
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'primary.main',
+                },
+              },
+            },
+          }}
+        />
+        {debouncedSearchTerm && (
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mt: 1, textAlign: 'center' }}
+          >
+            Showing {filteredCards.length} of {cards.length} words
+          </Typography>
+        )}
+      </Box>
       
       <List sx={{ width: '100%' }}>
-        {cards.map((card, index) => (
+        {filteredCards.map((card, index) => (
           <Box key={card.id}>
             <ListItem
               sx={{
@@ -264,7 +337,7 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
                 </Box>
               </Paper>
             </ListItem>
-            {index < cards.length - 1 && <Divider variant="middle" />}
+            {index < filteredCards.length - 1 && <Divider variant="middle" />}
           </Box>
         ))}
       </List>
@@ -287,6 +360,28 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
             }}
           >
             Import some cards to get started!
+          </Typography>
+        </Box>
+      )}
+
+      {cards.length > 0 && filteredCards.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
+          <Typography 
+            variant="h6" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
+            No words found
+          </Typography>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mt: 1,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' }
+            }}
+          >
+            Try adjusting your search term
           </Typography>
         </Box>
       )}
