@@ -1,0 +1,59 @@
+/* Mobile-first responsive styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* Prevent horizontal scroll on mobile */
+body {
+  overflow-x: hidden;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 600px) {
+  button, .MuiIconButton-root, .MuiFab-root {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better text readability on mobile */
+  .MuiTypography-root {
+    line-height: 1.4;
+  }
+  
+  /* Improve form inputs on mobile */
+  .MuiTextField-root input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Better spacing for mobile cards */
+  .MuiCard-root {
+    margin: 8px 0;
+  }
+  
+  /* Ensure tooltips work well on touch devices */
+  .MuiTooltip-tooltip {
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 900px) and (orientation: landscape) {
+  .flashcard-container {
+    height: 300px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .MuiSvgIcon-root {
+    -webkit-font-smoothing: antialiased;
+  }
+}
