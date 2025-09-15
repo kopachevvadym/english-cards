@@ -2,6 +2,11 @@
 
 A beautiful flashcard learning app built with Next.js and Material-UI, inspired by Anki.
 
+![Screenshot](images/word.png)
+![Screenshot](images/translate.png)
+![Screenshot](images/word-list.png)
+![Screenshot](images/words-import.png)
+
 ## Features
 
 - 🃏 **Interactive Flashcards**: Click to flip cards and reveal translations
@@ -34,9 +39,7 @@ Import your flashcards using simple word-translation pairs:
   {
     "hello": "hola",
     "goodbye": "adiós",
-    "thank you": "gracias"
-  },
-  {
+    "thank you": "gracias",
     "cat": "gato",
     "dog": "perro"
   }
