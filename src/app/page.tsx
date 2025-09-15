@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
     Container,
     Typography,
@@ -38,7 +38,6 @@ import { AddWordDialog } from '@/components/AddWordDialog'
 import { EditWordDialog } from '@/components/EditWordDialog'
 import { WordList } from '@/components/WordList'
 import { GameStats } from '@/components/GameStats'
-import { SettingsDialog } from '@/components/SettingsDialog'
 import { useCards } from '@/hooks/useCards'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Card, Example } from '@/types/card'
@@ -71,7 +70,6 @@ export default function Home() {
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
     const [editWordDialogOpen, setEditWordDialogOpen] = useState(false)
     const [editingCard, setEditingCard] = useState<Card | null>(null)
-    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null)
     const settingsOpen = Boolean(settingsAnchorEl)
@@ -554,11 +552,6 @@ export default function Home() {
                 open={importDialogOpen}
                 onClose={() => setImportDialogOpen(false)}
                 onImport={importCards}
-            />
-
-            <SettingsDialog
-                open={settingsDialogOpen}
-                onClose={() => setSettingsDialogOpen(false)}
             />
 
             {/* Settings Menu */}
