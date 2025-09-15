@@ -11,7 +11,11 @@ import {
   Typography,
   Box,
   Alert,
+  IconButton,
+  Tooltip,
 } from '@mui/material'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import CheckIcon from '@mui/icons-material/Check'
 import { Example } from '@/types/card'
 
 interface ImportDialogProps {
@@ -24,6 +28,7 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState('')
   const [importResult, setImportResult] = useState<{imported: number, skipped: number} | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const handleImport = async () => {
     try {
@@ -90,6 +95,16 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
   "thank you": "gracias"
 }`
 
+  const handleCopyExample = async () => {
+    try {
+      await navigator.clipboard.writeText(exampleSimpleJson)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
+  }
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Import Cards from JSON</DialogTitle>
@@ -124,11 +139,25 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           </Alert>
         )}
         
-        <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Simple format (word-translation pairs):
-          </Typography>
-          <Typography variant="body2" component="pre" sx={{ fontSize: '0.75rem', mb: 2 }}>
+        <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, position: 'relative' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="subtitle2">
+              Simple format (word-translation pairs):
+            </Typography>
+            <Tooltip title={copied ? "Copied!" : "Copy example"}>
+              <IconButton
+                onClick={handleCopyExample}
+                size="small"
+                sx={{
+                  color: copied ? 'success.main' : 'text.secondary',
+                  '&:hover': { bgcolor: 'action.hover' }
+                }}
+              >
+                {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Typography variant="body2" component="pre" sx={{ fontSize: '0.75rem', mb: 0 }}>
             {exampleSimpleJson}
           </Typography>
         </Box>
