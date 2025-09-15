@@ -587,7 +587,7 @@ export default function Home() {
                     Import Words
                 </MenuItem>
                 <Divider />
-                {cards.length > 0 && [
+                {[
                     <Divider key="divider1" />,
                     <MenuItem key="export" onClick={handleExportProgress}>
                         <CloudDownloadIcon sx={{ mr: 2, color: 'info.main' }} />
