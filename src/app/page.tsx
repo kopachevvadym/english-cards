@@ -8,12 +8,9 @@ import {
     Button,
     AppBar,
     Toolbar,
-    Fab,
     LinearProgress,
     Alert,
     Chip,
-    CircularProgress,
-    Tooltip,
     Menu,
     MenuItem,
     IconButton,
@@ -33,8 +30,6 @@ import {
     School as SchoolIcon,
     Settings as SettingsIcon,
     Add as AddIcon,
-    Storage as StorageIcon,
-    Cloud as CloudIcon,
     Translate as TranslateIcon,
 } from '@mui/icons-material'
 import { FlashCard } from '@/components/FlashCard'
@@ -70,7 +65,7 @@ export default function Home() {
         navigateToPrevious,
     } = useCards()
 
-    const { dataProvider, isValidConfiguration, showTranslationFirst, setShowTranslationFirst } = useSettings()
+    const { showTranslationFirst, setShowTranslationFirst } = useSettings()
 
     const [importDialogOpen, setImportDialogOpen] = useState(false)
     const [addWordDialogOpen, setAddWordDialogOpen] = useState(false)
@@ -164,11 +159,6 @@ export default function Home() {
 
     const handleImportWordsFromSettings = () => {
         setImportDialogOpen(true)
-        setSettingsAnchorEl(null)
-    }
-
-    const handleDataProviderSettings = () => {
-        setSettingsDialogOpen(true)
         setSettingsAnchorEl(null)
     }
 
@@ -604,19 +594,6 @@ export default function Home() {
                     Import Words
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={handleDataProviderSettings}>
-                    {dataProvider === 'localhost' ? 
-                        <StorageIcon sx={{ mr: 2, color: 'info.main' }} /> : 
-                        <CloudIcon sx={{ mr: 2, color: 'info.main' }} />
-                    }
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <Typography variant="body2">Data Provider</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            {dataProvider === 'localhost' ? 'Local Storage' : 'MongoDB'} 
-                            {!isValidConfiguration(dataProvider) && ' (needs setup)'}
-                        </Typography>
-                    </Box>
-                </MenuItem>
                 {cards.length > 0 && [
                     <Divider key="divider1" />,
                     <MenuItem key="export" onClick={handleExportProgress}>
