@@ -36,19 +36,11 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           typeof item === 'object' && 
           item !== null &&
           typeof item.word === 'string' && 
-          typeof item.translation === 'string' &&
-          (item.examples === undefined || (Array.isArray(item.examples) && 
-            item.examples.every((ex: any) => 
-              typeof ex === 'object' && 
-              typeof ex.id === 'string' && 
-              typeof ex.text === 'string' && 
-              typeof ex.translation === 'string'
-            )
-          ))
+          typeof item.translation === 'string'
         )
         
         if (!isValid) {
-          setError('Array items must have "word" and "translation" strings, with optional "examples" array containing objects with id, text, and translation strings')
+          setError('Array items must have "word" and "translation" strings')
           return
         }
         
@@ -98,21 +90,6 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
   "thank you": "gracias"
 }`
 
-  const exampleAdvancedJson = `[
-  {
-    "word": "hello",
-    "translation": "hola",
-    "example": "Hello, how are you?",
-    "exampleTranslation": "Hola, ¿cómo estás?"
-  },
-  {
-    "word": "goodbye",
-    "translation": "adiós",
-    "example": "Goodbye, see you later!",
-    "exampleTranslation": "¡Adiós, nos vemos luego!"
-  }
-]`
-
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>Import Cards from JSON</DialogTitle>
@@ -129,7 +106,7 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           rows={12}
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
-          placeholder={exampleAdvancedJson}
+          placeholder={exampleSimpleJson}
           variant="outlined"
           sx={{ mb: 2 }}
         />
@@ -153,13 +130,6 @@ export const ImportDialog = ({ open, onClose, onImport }: ImportDialogProps) => 
           </Typography>
           <Typography variant="body2" component="pre" sx={{ fontSize: '0.75rem', mb: 2 }}>
             {exampleSimpleJson}
-          </Typography>
-          
-          <Typography variant="subtitle2" gutterBottom>
-            Advanced format (with examples):
-          </Typography>
-          <Typography variant="body2" component="pre" sx={{ fontSize: '0.75rem' }}>
-            {exampleAdvancedJson}
           </Typography>
         </Box>
       </DialogContent>
