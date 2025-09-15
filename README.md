@@ -1,6 +1,6 @@
 # English Cards - Flashcard Learning App
 
-A beautiful flashcard learning app built with Next.js and Material-UI, inspired by Anki.
+A beautiful flashcard learning app built with Next.js and Material-UI.
 
 ![Screenshot](images/word.png)
 ![Screenshot](images/translate.png)
