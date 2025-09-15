@@ -260,28 +260,7 @@ export default function Home() {
                                 height: { xs: 24, sm: 32 }
                             }}
                         />
-                        <Tooltip title={`Data Provider: ${dataProvider === 'localhost' ? 'Local Storage' : 'MongoDB'}`}>
-                            <Chip
-                                icon={dataProvider === 'localhost' ? 
-                                    <StorageIcon sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }} /> : 
-                                    <CloudIcon sx={{ fontSize: { xs: '0.8rem', sm: '1rem' } }} />
-                                }
-                                label={dataProvider === 'localhost' ? 'Local' : 'Cloud'}
-                                color={isValidConfiguration(dataProvider) ? 'success' : 'warning'}
-                                variant="outlined"
-                                size="small"
-                                sx={{
-                                    color: 'white',
-                                    borderColor: 'white',
-                                    fontSize: { xs: '0.6rem', sm: '0.7rem' },
-                                    height: { xs: 24, sm: 32 },
-                                    '& .MuiChip-icon': {
-                                        color: 'white'
-                                    }
-                                }}
-                            />
-                        </Tooltip>
-                        <IconButton
+                      <IconButton
                             onClick={handleSettingsClick}
                             sx={{
                                 color: 'white',
