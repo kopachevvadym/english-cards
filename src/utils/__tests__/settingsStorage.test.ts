@@ -90,6 +90,7 @@ describe('settingsStorage', () => {
     })
 
     it('should return defaults when stored settings are invalid JSON', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       mockLocalStorage.getItem.mockReturnValue('invalid json')
 
       const result = loadSettings(defaultSettings)
@@ -97,9 +98,13 @@ describe('settingsStorage', () => {
       expect(result.success).toBe(false)
       expect(result.data).toEqual(defaultSettings)
       expect(result.error).toBeDefined()
+      expect(consoleErrorSpy).toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
     })
 
     it('should return defaults when stored settings fail validation', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
       const invalidSettings = {
         selectedProvider: 'mongodb',
         providers: {
@@ -123,9 +128,13 @@ describe('settingsStorage', () => {
       expect(result.success).toBe(true)
       expect(result.data).toEqual(defaultSettings)
       expect(result.error).toBeDefined()
+      expect(consoleWarnSpy).toHaveBeenCalled()
+
+      consoleWarnSpy.mockRestore()
     })
 
     it('should handle localStorage errors gracefully', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       mockLocalStorage.getItem.mockImplementation(() => {
         throw new Error('Storage error')
       })
@@ -135,6 +144,9 @@ describe('settingsStorage', () => {
       expect(result.success).toBe(false)
       expect(result.data).toEqual(defaultSettings)
       expect(result.error).toBe('Storage error')
+      expect(consoleErrorSpy).toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
     })
   })
 
@@ -202,6 +214,7 @@ describe('settingsStorage', () => {
     })
 
     it('should handle localStorage errors gracefully', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       mockLocalStorage.setItem.mockImplementation(() => {
         throw new Error('Storage error')
       })
@@ -210,6 +223,9 @@ describe('settingsStorage', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Storage error')
+      expect(consoleErrorSpy).toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
     })
   })
 
@@ -222,6 +238,7 @@ describe('settingsStorage', () => {
     })
 
     it('should handle localStorage errors gracefully', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       mockLocalStorage.removeItem.mockImplementation(() => {
         throw new Error('Storage error')
       })
@@ -230,6 +247,9 @@ describe('settingsStorage', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Storage error')
+      expect(consoleErrorSpy).toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
     })
   })
 
