@@ -301,9 +301,7 @@ export const useCards = () => {
       return shuffledOrder.filter(matchesSelectedSet)
     }
 
-    // In sequential mode, filter based on includeKnownWords setting and set selection
-    const base = includeKnownWords ? cards : cards.filter(card => !card.isKnown)
-    return base.filter(matchesSelectedSet)
+    return cards.filter(matchesSelectedSet)
   }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
 
   const toggleShuffle = useCallback(() => {

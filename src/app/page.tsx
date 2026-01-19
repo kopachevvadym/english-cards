@@ -78,8 +78,13 @@ export default function Home() {
 
     const activeCards = getActiveCards()
     const currentCard = activeCards[currentCardIndex]
-    const unknownCards = cards.filter(card => !card.isKnown)
-    const progress = cards.length > 0 ? ((cards.length - unknownCards.length) / cards.length) * 100 : 0
+
+    // Progress is scoped to the currently selected set (activeCards)
+    const unknownActiveCards = activeCards.filter(card => !card.isKnown)
+    const progress = activeCards.length > 0
+      ? ((activeCards.length - unknownActiveCards.length) / activeCards.length) * 100
+      : 0
+
 
     const handleNext = () => {
         navigateToNext()
@@ -248,7 +253,7 @@ export default function Home() {
                             <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>List</Box>
                         </Button>
                         <Chip
-                            label={`${cards.length - unknownCards.length}/${cards.length}`}
+                            label={`${activeCards.length - unknownActiveCards.length}/${activeCards.length}`}
                             color="secondary"
                             variant="outlined"
                             sx={{
