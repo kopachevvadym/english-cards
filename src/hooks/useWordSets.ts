@@ -5,23 +5,23 @@ import { WordSetId, WordSetState } from '@/types/wordSet';
 import { createWordSet, loadWordSetState, saveWordSetState, selectWordSet } from '@/utils/wordSetsStorage';
 
 export const useWordSets = () => {
-  // Initialize from localStorage immediately on the client.
-  // This prevents an "empty" initial state from overwriting persisted sets before load runs.
-  const [state, setState] = useState<WordSetState>(() => {
-    return loadWordSetState();
-  });
+  // IMPORTANT: The first render must match server output to avoid hydration mismatch.
+  // So we start with an empty state and then hydrate from localStorage after mount.
+  const [state, setState] = useState<WordSetState>({ sets: [], selectedSetId: null });
 
-  // Track hydration so we don't accidentally persist the default empty state
-  // before we had a chance to read from localStorage.
-  const hasHydratedRef = useRef(false);
+  // Indicates we've loaded from localStorage at least once.
+  // We don't persist until this is true, otherwise we'd overwrite stored sets with the empty initial state.
+  const hasLoadedFromStorageRef = useRef(false);
 
+  // Load from localStorage after mount
   useEffect(() => {
-    hasHydratedRef.current = true;
+    setState(loadWordSetState());
+    hasLoadedFromStorageRef.current = true;
   }, []);
 
-  // Persist (after hydration)
+  // Persist (only after we've loaded)
   useEffect(() => {
-    if (!hasHydratedRef.current) return;
+    if (!hasLoadedFromStorageRef.current) return;
     saveWordSetState(state);
   }, [state]);
 
