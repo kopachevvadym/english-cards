@@ -214,7 +214,8 @@ describe('DataProviderManager', () => {
         word: 'test',
         translation: 'prueba',
         isKnown: false,
-        createdAt: new Date()
+        createdAt: new Date(),
+        examples: []
       }
 
       primaryProvider.setFailure(true, DataProviderError.CONNECTION_FAILED, 'Primary failed')
@@ -253,7 +254,7 @@ describe('DataProviderManager', () => {
     it('should fail to recover a persistently failing provider', async () => {
       primaryProvider.setFailure(true, DataProviderError.CONNECTION_FAILED, 'Persistent failure')
 
-      const recovered = await manager.attemptProviderRecovery('primary', 2) // Reduce attempts
+      const recovered = await manager.attemptProviderRecovery('primary') // Reduce attempts
       expect(recovered).toBe(false)
       expect(notifications.some(n => n.title === 'Provider Recovery Failed')).toBe(true)
     }, 10000) // Increase timeout for this specific test
