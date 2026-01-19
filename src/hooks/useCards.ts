@@ -317,6 +317,24 @@ export const useCards = () => {
       return assignedSetId === selectedSet
     }
 
+    if (isShuffled && shuffledOrder.length > 0) {
+      // In shuffled mode, return the complete shuffled order, filtered by set + known filter
+      return shuffledOrder.filter((c) => matchesSelectedSet(c))
+    }
+
+    return cards.filter((c) => matchesSelectedSet(c))
+  }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
+
+  const getActiveKnownCards = useCallback(() => {
+    const selectedSet = selectedWordSetId
+
+    const matchesSelectedSet = (card: Card) => {
+      const assignedSetId = wordSetAssignments[card.id]
+      // Main set should only show cards that are NOT assigned to any custom set
+      if (!selectedSet) return !assignedSetId
+      return assignedSetId === selectedSet
+    }
+
     const matchesKnownFilter = (card: Card) => includeKnownWords || !card.isKnown
 
     if (isShuffled && shuffledOrder.length > 0) {
@@ -646,6 +664,7 @@ export const useCards = () => {
     markAsKnown,
     markAsUnknown,
     getActiveCards,
+    getActiveKnownCards,
     resetProgress,
     isShuffled,
     toggleShuffle,

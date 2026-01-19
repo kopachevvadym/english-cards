@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
     Container,
     Typography,
@@ -52,6 +52,7 @@ export default function Home() {
         markAsKnown,
         markAsUnknown,
         getActiveCards,
+        getActiveKnownCards,
         resetProgress,
         isShuffled,
         toggleShuffle,
@@ -77,12 +78,12 @@ export default function Home() {
     const settingsOpen = Boolean(settingsAnchorEl)
 
     const activeCards = getActiveCards()
+    const activeKnownCards = getActiveKnownCards()
     const currentCard = activeCards[currentCardIndex]
 
     // Progress is scoped to the currently selected set (activeCards)
-    const unknownActiveCards = activeCards.filter(card => !card.isKnown)
     const progress = activeCards.length > 0
-      ? ((activeCards.length - unknownActiveCards.length) / activeCards.length) * 100
+      ? ((activeCards.length - activeKnownCards.length) / activeCards.length) * 100
       : 0
 
 
@@ -253,7 +254,7 @@ export default function Home() {
                             <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>List</Box>
                         </Button>
                         <Chip
-                            label={`${activeCards.length - unknownActiveCards.length}/${activeCards.length}`}
+                            label={`${activeKnownCards.length}/${activeCards.length}`}
                             color="secondary"
                             variant="outlined"
                             sx={{
@@ -525,14 +526,24 @@ export default function Home() {
                                     </Button>
                                 </Box>
 
-                                <FlashCard
+                                {activeCards.length === 0 ? (
+                                  <Typography variant="body1" sx={{ color: 'white', opacity: 0.9, textAlign: 'center', mt: 3 }}>
+                                    No words in this set yet.
+                                  </Typography>
+                                ) : !currentCard ? (
+                                  <Typography variant="body1" sx={{ color: 'white', opacity: 0.9, textAlign: 'center', mt: 3 }}>
+                                    Select another card.
+                                  </Typography>
+                                ) : (
+                                  <FlashCard
                                     card={currentCard}
                                     onMarkKnown={handleMarkKnown}
                                     onMarkUnknown={handleMarkUnknown}
                                     onEdit={handleEditCard}
                                     onDelete={handleDeleteCard}
                                     showTranslationFirst={showTranslationFirst}
-                                />
+                                  />
+                                )}
 
                                 <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                                     <GameStats
