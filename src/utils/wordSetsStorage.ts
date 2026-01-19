@@ -31,12 +31,19 @@ export const loadWordSetState = (): WordSetState => {
   const parsed = safeJsonParse<PersistedState>(raw)
   if (!parsed || !Array.isArray(parsed.sets)) return defaultState
 
-  return {
-    sets: parsed.sets.map((s) => ({
+  const sets = parsed.sets
+    .filter((s): s is PersistedWordSet => !!s && typeof s.id === 'string' && typeof s.name === 'string')
+    .map((s) => ({
       ...s,
       createdAt: new Date(s.createdAt),
-    })),
-    selectedSetId: parsed.selectedSetId ?? null,
+    }))
+
+  const selectedSetId = typeof parsed.selectedSetId === 'string' ? parsed.selectedSetId : null
+
+  return {
+    sets,
+    // If selected id doesn't exist anymore, fall back to main
+    selectedSetId: sets.some((s) => s.id === selectedSetId) ? selectedSetId : null,
   }
 }
 

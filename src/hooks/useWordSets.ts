@@ -5,7 +5,7 @@ import { WordSetState, WordSetId } from '@/types/wordSet'
 import { createWordSet, loadWordSetState, saveWordSetState, selectWordSet } from '@/utils/wordSetsStorage'
 
 export const useWordSets = () => {
-  const [state, setState] = useState<WordSetState>({ sets: [], selectedSetId: null })
+  const [state, setState] = useState<WordSetState>(() => ({ sets: [], selectedSetId: null }))
 
   // Initial load
   useEffect(() => {
@@ -26,15 +26,28 @@ export const useWordSets = () => {
   }, [sets, selectedSetId])
 
   const createSet = useCallback((name: string) => {
-    setState((prev) => createWordSet(prev, name))
+    setState((prev) => {
+      const next = createWordSet(prev, name)
+      // Extra safety: persist immediately
+      saveWordSetState(next)
+      return next
+    })
   }, [])
 
   const switchToMain = useCallback(() => {
-    setState((prev) => selectWordSet(prev, null))
+    setState((prev) => {
+      const next = selectWordSet(prev, null)
+      saveWordSetState(next)
+      return next
+    })
   }, [])
 
   const switchToSet = useCallback((id: WordSetId) => {
-    setState((prev) => selectWordSet(prev, id))
+    setState((prev) => {
+      const next = selectWordSet(prev, id)
+      saveWordSetState(next)
+      return next
+    })
   }, [])
 
   return {
