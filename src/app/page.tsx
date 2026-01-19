@@ -41,6 +41,7 @@ import { GameStats } from '@/components/GameStats'
 import { useCards } from '@/hooks/useCards'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Card, Example } from '@/types/card'
+import { WordSetSelector } from '@/components/WordSetSelector'
 
 export default function Home() {
     const {
@@ -62,6 +63,7 @@ export default function Home() {
         updateCard,
         navigateToNext,
         navigateToPrevious,
+        wordSets,
     } = useCards()
 
     const { showTranslationFirst, setShowTranslationFirst } = useSettings()
@@ -205,6 +207,14 @@ export default function Home() {
                         gap: { xs: 1, sm: 2 },
                         flexWrap: 'wrap'
                     }}>
+                        <WordSetSelector
+                          sets={wordSets.sets}
+                          selectedSetId={wordSets.selectedSetId}
+                          selectedSetName={wordSets.selectedSet?.name ?? null}
+                          onSelectMain={wordSets.switchToMain}
+                          onSelectSet={wordSets.switchToSet}
+                          onCreateSet={wordSets.createSet}
+                        />
                         <Button
                             variant={viewMode === 'cards' ? 'contained' : 'outlined'}
                             size="small"
@@ -316,7 +326,7 @@ export default function Home() {
                                             Congratulations! 🎉
                                         </Typography>
                                         <Typography>
-                                            You've learned all your cards! You can reset your progress to review them again, or toggle "All Words" to practice known words.
+                                            You&apos;ve learned all your cards! You can reset your progress to review them again, or toggle &quot;All Words&quot; to practice known words.
                                         </Typography>
                                     </Alert>
                                 ) : (

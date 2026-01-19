@@ -6,6 +6,30 @@ import { DataProviderManager } from '@/providers/DataProviderManager'
 import { LocalStorageProvider } from '@/providers/LocalStorageProvider'
 import { useSettings } from '@/contexts/SettingsContext'
 import { ProviderError, DataProviderError } from '@/providers/types'
+import { useWordSets } from '@/hooks/useWordSets'
+
+// Local mapping of cardId -> setId (single assignment) stored in localStorage.
+// This keeps actual words in the main set storage, but allows filtering views.
+const WORD_SET_ASSIGNMENTS_KEY = 'english-cards-word-set-assignments'
+
+type WordSetAssignments = Record<string, string> // cardId -> setId
+
+const loadAssignments = (): WordSetAssignments => {
+  if (typeof window === 'undefined') return {}
+  const raw = window.localStorage.getItem(WORD_SET_ASSIGNMENTS_KEY)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? (parsed as WordSetAssignments) : {}
+  } catch {
+    return {}
+  }
+}
+
+const saveAssignments = (assignments: WordSetAssignments) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(WORD_SET_ASSIGNMENTS_KEY, JSON.stringify(assignments))
+}
 
 export const useCards = () => {
   const [cards, setCards] = useState<Card[]>([])
@@ -21,6 +45,8 @@ export const useCards = () => {
   const [error, setError] = useState<string | null>(null)
 
   const { dataProvider, mongoConfig, isValidConfiguration } = useSettings()
+  const wordSets = useWordSets()
+  const [wordSetAssignments, setWordSetAssignments] = useState<WordSetAssignments>({})
 
   // Shuffle function - defined early to avoid initialization issues
   const shuffleArray = useCallback((array: Card[]) => {
@@ -58,6 +84,16 @@ export const useCards = () => {
 
     return manager
   }, [mongoConfig, isValidConfiguration])
+
+  // Load card assignments from localStorage
+  useEffect(() => {
+    setWordSetAssignments(loadAssignments())
+  }, [])
+
+  // Save card assignments to localStorage
+  useEffect(() => {
+    saveAssignments(wordSetAssignments)
+  }, [wordSetAssignments])
 
   // Load cards from current provider
   const loadCards = useCallback(async () => {
@@ -210,11 +246,22 @@ export const useCards = () => {
     const updatedCards = [...cards, ...newCards]
     await saveCards(updatedCards) // Don't preserve order when importing new cards
 
+    // If a custom set is selected, automatically assign imported cards to it.
+    if (wordSets.selectedSetId) {
+      setWordSetAssignments((prev) => {
+        const next = { ...prev }
+        newCards.forEach((c) => {
+          next[c.id] = <string>wordSets.selectedSetId
+        })
+        return next
+      })
+    }
+
     return {
       imported: newCards.length,
       skipped: candidateCards.length - newCards.length
     }
-  }, [cards, saveCards])
+  }, [cards, saveCards, wordSets.selectedSetId])
 
   const markAsKnown = useCallback(async (cardId: string) => {
     const updatedCards = cards.map(card =>
@@ -234,18 +281,30 @@ export const useCards = () => {
     await saveCards(updatedCards, true) // Preserve shuffled order
   }, [cards, saveCards])
 
+  const selectedWordSetId = wordSets.selectedSetId
+
+  const assignCardToSelectedSet = useCallback((cardId: string) => {
+    if (!selectedWordSetId) return
+    setWordSetAssignments((prev) => ({ ...prev, [cardId]: selectedWordSetId }))
+  }, [selectedWordSetId])
+
   const getActiveCards = useCallback(() => {
-    if (isShuffled && shuffledOrder.length > 0) {
-      // In shuffled mode, return the complete shuffled order
-      // Navigation logic will handle skipping known cards if needed
-      return shuffledOrder
+    const selectedSet = selectedWordSetId
+
+    const matchesSelectedSet = (card: Card) => {
+      if (!selectedSet) return true // main set
+      return wordSetAssignments[card.id] === selectedSet
     }
 
-    // In sequential mode, filter based on includeKnownWords setting
-    return includeKnownWords
-      ? cards
-      : cards.filter(card => !card.isKnown)
-  }, [cards, includeKnownWords, isShuffled, shuffledOrder])
+    if (isShuffled && shuffledOrder.length > 0) {
+      // In shuffled mode, return the complete shuffled order, filtered by set
+      return shuffledOrder.filter(matchesSelectedSet)
+    }
+
+    // In sequential mode, filter based on includeKnownWords setting and set selection
+    const base = includeKnownWords ? cards : cards.filter(card => !card.isKnown)
+    return base.filter(matchesSelectedSet)
+  }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
 
   const toggleShuffle = useCallback(() => {
     const newShuffledState = !isShuffled
@@ -430,6 +489,12 @@ export const useCards = () => {
 
     try {
       await providerManager.saveCard(newCard)
+
+      // If a custom set is selected, assign newly created card to it
+      if (selectedWordSetId) {
+        setWordSetAssignments((prev) => ({ ...prev, [newCard.id]: selectedWordSetId }))
+      }
+
       setCards(prevCards => {
         const updatedCards = [...prevCards, newCard]
 
@@ -454,7 +519,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
+  }, [providerManager, isShuffled, includeKnownWords, shuffleArray, selectedWordSetId])
 
   // Update an existing card using the provider
   const updateCard = useCallback(async (updatedCard: Card) => {
@@ -549,6 +614,10 @@ export const useCards = () => {
     findNextValidCardIndex,
 
     // Provider manager access for advanced use cases
-    providerManager
+    providerManager,
+
+    // Word sets
+    wordSets,
+    assignCardToSelectedSet,
   }
 }
