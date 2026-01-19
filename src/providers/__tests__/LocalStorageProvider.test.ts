@@ -1,6 +1,6 @@
 import { LocalStorageProvider } from '../LocalStorageProvider'
 import { Card } from '../../types/card'
-import { ProviderError, DataProviderError } from '../types'
+import { ProviderError, DataProviderError, ProviderStatus } from '../types'
 
 // Mock localStorage
 const createLocalStorageMock = () => {
@@ -60,8 +60,9 @@ describe('LocalStorageProvider', () => {
       isKnown: false,
       createdAt: new Date('2023-01-01T00:00:00.000Z'),
       lastReviewed: new Date('2023-01-02T00:00:00.000Z'),
-      example: 'Hello, world!',
-      exampleTranslation: '¡Hola, mundo!',
+      examples: [
+        { id: 'ex-1', text: 'Hello, world!', translation: 'Hola, mundo!' }
+      ]
     }
   })
 
@@ -134,20 +135,20 @@ describe('LocalStorageProvider', () => {
     })
 
     it('should handle cards without optional fields', async () => {
-      const minimalCard = {
+      const minimalCard: Card = {
         id: 'minimal-card',
         word: 'test',
         translation: 'prueba',
         isKnown: true,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        examples: []
       }
       localStorageMock.store['english-cards'] = JSON.stringify([minimalCard])
 
       const cards = await provider.getCards()
       expect(cards).toHaveLength(1)
       expect(cards[0].lastReviewed).toBeUndefined()
-      expect(cards[0].example).toBeUndefined()
-      expect(cards[0].exampleTranslation).toBeUndefined()
+      expect(cards[0].examples).toEqual([])
     })
 
     it('should throw ProviderError and clear corrupted data', async () => {
@@ -360,21 +361,20 @@ describe('LocalStorageProvider', () => {
 
     it('should validate optional string fields', async () => {
       const invalidCards = [
-        { ...mockCard, example: 123 as any },
-        { ...mockCard, exampleTranslation: true as any },
+        { ...mockCard, examples: [{ id: 'ex', text: 123 as any, translation: 'x' }] },
+        { ...mockCard, examples: [{ id: 'ex', text: 'x', translation: true as any }] },
       ]
 
       for (const invalidCard of invalidCards) {
-        await expect(provider.saveCard(invalidCard)).rejects.toThrow(ProviderError)
+        await expect(provider.saveCard(invalidCard as any)).rejects.toThrow(ProviderError)
       }
     })
 
     it('should accept valid cards with all optional fields', async () => {
-      const validCard = {
+      const validCard: Card = {
         ...mockCard,
         lastReviewed: undefined,
-        example: undefined,
-        exampleTranslation: undefined,
+        examples: []
       }
 
       await expect(provider.saveCard(validCard)).resolves.toEqual(validCard)
@@ -488,3 +488,4 @@ describe('LocalStorageProvider', () => {
     })
   })
 })
+

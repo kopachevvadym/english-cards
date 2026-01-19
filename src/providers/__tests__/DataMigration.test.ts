@@ -115,8 +115,9 @@ describe('DataMigrationService', () => {
     translation: `translation_${word}`,
     isKnown: false,
     createdAt: new Date(),
-    example: `example_${word}`,
-    exampleTranslation: `example_translation_${word}`
+    examples: [
+      { id: `${id}-ex-1`, text: `example_${word}`, translation: `example_translation_${word}` }
+    ]
   })
 
   beforeEach(() => {
