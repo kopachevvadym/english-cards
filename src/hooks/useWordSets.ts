@@ -1,54 +1,61 @@
-'use client'
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { WordSetState, WordSetId } from '@/types/wordSet'
-import { createWordSet, loadWordSetState, saveWordSetState, selectWordSet } from '@/utils/wordSetsStorage'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { WordSetId, WordSetState } from '@/types/wordSet';
+import { createWordSet, loadWordSetState, saveWordSetState, selectWordSet } from '@/utils/wordSetsStorage';
 
 export const useWordSets = () => {
-  const [state, setState] = useState<WordSetState>(() => ({ sets: [], selectedSetId: null }))
+  // Initialize from localStorage immediately on the client.
+  // This prevents an "empty" initial state from overwriting persisted sets before load runs.
+  const [state, setState] = useState<WordSetState>(() => {
+    return loadWordSetState();
+  });
 
-  // Initial load
+  // Track hydration so we don't accidentally persist the default empty state
+  // before we had a chance to read from localStorage.
+  const hasHydratedRef = useRef(false);
+
   useEffect(() => {
-    setState(loadWordSetState())
-  }, [])
+    hasHydratedRef.current = true;
+  }, []);
 
-  // Persist
+  // Persist (after hydration)
   useEffect(() => {
-    saveWordSetState(state)
-  }, [state])
+    if (!hasHydratedRef.current) return;
+    saveWordSetState(state);
+  }, [state]);
 
-  const sets = state.sets
-  const selectedSetId = state.selectedSetId
+  const sets = state.sets;
+  const selectedSetId = state.selectedSetId;
 
   const selectedSet = useMemo(() => {
-    if (!selectedSetId) return null
-    return sets.find((s) => s.id === selectedSetId) ?? null
-  }, [sets, selectedSetId])
+    if (!selectedSetId) return null;
+    return sets.find((s) => s.id === selectedSetId) ?? null;
+  }, [sets, selectedSetId]);
 
   const createSet = useCallback((name: string) => {
     setState((prev) => {
-      const next = createWordSet(prev, name)
-      // Extra safety: persist immediately
-      saveWordSetState(next)
-      return next
-    })
-  }, [])
+      const next = createWordSet(prev, name);
+      saveWordSetState(next);
+      return next;
+    });
+  }, []);
 
   const switchToMain = useCallback(() => {
     setState((prev) => {
-      const next = selectWordSet(prev, null)
-      saveWordSetState(next)
-      return next
-    })
-  }, [])
+      const next = selectWordSet(prev, null);
+      saveWordSetState(next);
+      return next;
+    });
+  }, []);
 
   const switchToSet = useCallback((id: WordSetId) => {
     setState((prev) => {
-      const next = selectWordSet(prev, id)
-      saveWordSetState(next)
-      return next
-    })
-  }, [])
+      const next = selectWordSet(prev, id);
+      saveWordSetState(next);
+      return next;
+    });
+  }, []);
 
   return {
     sets,
@@ -57,5 +64,5 @@ export const useWordSets = () => {
     createSet,
     switchToMain,
     switchToSet,
-  }
-}
+  };
+};
