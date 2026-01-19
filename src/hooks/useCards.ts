@@ -311,16 +311,20 @@ export const useCards = () => {
     const selectedSet = selectedWordSetId
 
     const matchesSelectedSet = (card: Card) => {
-      if (!selectedSet) return true // main set
-      return wordSetAssignments[card.id] === selectedSet
+      const assignedSetId = wordSetAssignments[card.id]
+      // Main set should only show cards that are NOT assigned to any custom set
+      if (!selectedSet) return !assignedSetId
+      return assignedSetId === selectedSet
     }
+
+    const matchesKnownFilter = (card: Card) => includeKnownWords || !card.isKnown
 
     if (isShuffled && shuffledOrder.length > 0) {
-      // In shuffled mode, return the complete shuffled order, filtered by set
-      return shuffledOrder.filter(matchesSelectedSet)
+      // In shuffled mode, return the complete shuffled order, filtered by set + known filter
+      return shuffledOrder.filter((c) => matchesSelectedSet(c) && matchesKnownFilter(c))
     }
 
-    return cards.filter(matchesSelectedSet)
+    return cards.filter((c) => matchesSelectedSet(c) && matchesKnownFilter(c))
   }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
 
   const toggleShuffle = useCallback(() => {
@@ -459,11 +463,47 @@ export const useCards = () => {
     setError(null)
 
     try {
+      const selectedSet = selectedWordSetId
+
+      // If we're inside a custom set, deleting should only remove the card from that set.
+      // Since assignments are single-set, that means unassigning it.
+      if (selectedSet) {
+        setWordSetAssignments((prev) => {
+          if (prev[cardId] !== selectedSet) return prev
+          const next = { ...prev }
+          delete next[cardId]
+          // Persist immediately so UI stays consistent across reloads.
+          saveAssignments(next)
+          return next
+        })
+
+        // Adjust the current card index based on the new active list after unassignment.
+        // We compute with the latest in-memory assignments (best-effort).
+        const activeCards = getActiveCards().filter((c) => c.id !== cardId)
+        if (currentCardIndex >= activeCards.length && activeCards.length > 0) {
+          setCurrentCardIndex(activeCards.length - 1)
+        } else if (activeCards.length === 0) {
+          setCurrentCardIndex(0)
+        }
+
+        return
+      }
+
+      // Main set: this is an unassigned card, so delete it globally.
       await providerManager.deleteCard(cardId)
 
       // Update local state
       const updatedCards = cards.filter(card => card.id !== cardId)
       setCards(updatedCards)
+
+      // Remove any lingering assignment (defensive)
+      setWordSetAssignments((prev) => {
+        if (!prev[cardId]) return prev
+        const next = { ...prev }
+        delete next[cardId]
+        saveAssignments(next)
+        return next
+      })
 
       // Update shuffled order if currently shuffled
       if (isShuffled) {
@@ -471,7 +511,6 @@ export const useCards = () => {
       }
 
       // Adjust current card index if necessary
-      // Calculate active cards based on updated cards
       const activeCards = includeKnownWords
         ? updatedCards
         : updatedCards.filter(card => !card.isKnown)
@@ -491,7 +530,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager, cards, currentCardIndex, includeKnownWords, isShuffled])
+  }, [providerManager, cards, currentCardIndex, includeKnownWords, isShuffled, selectedWordSetId, getActiveCards])
 
   // Add a new card using the provider
   const addCard = useCallback(async (cardData: Omit<Card, 'id' | 'createdAt'>) => {
