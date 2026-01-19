@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite'
-import { FlashCard } from './FlashCard'
-import type { Card } from '@/types/card'
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import React from 'react';
+import { FlashCard } from './FlashCard';
+import type { Card } from '@/types/card';
+import { Box, Container } from '@mui/material';
 
 const sampleCard: Card = {
   id: 'card-1',
@@ -13,21 +15,25 @@ const sampleCard: Card = {
     { id: 'ex-1', text: 'Hello, how are you?', translation: 'Hola, ¿cómo estás?' },
     { id: 'ex-2', text: 'Hello again!', translation: '¡Hola de nuevo!' },
   ],
-}
+};
 
 const meta: Meta<typeof FlashCard> = {
   title: 'Components/FlashCard',
   component: FlashCard,
   args: {
     card: sampleCard,
-    onMarkKnown: () => {},
-    onMarkUnknown: () => {},
-    onEdit: () => {},
-    onDelete: () => {},
+    onMarkKnown: () => {
+    },
+    onMarkUnknown: () => {
+    },
+    onEdit: () => {
+    },
+    onDelete: () => {
+    },
     showTranslationFirst: false,
   },
   parameters: {
-    layout: 'centered',
+    layout: 'fullscreen',
     docs: {
       description: {
         component:
@@ -35,21 +41,30 @@ const meta: Meta<typeof FlashCard> = {
       },
     },
   },
+  decorators: [
+    (Story) => (
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <Story/>
+        </Box>
+      </Container>
+    ),
+  ],
   argTypes: {
     showTranslationFirst: { control: 'boolean' },
   },
-}
+};
 
-export default meta
+export default meta;
 type Story = StoryObj<typeof FlashCard>
 
-export const Default: Story = {}
+export const Default: Story = {};
 
 export const TranslationFirst: Story = {
   args: {
     showTranslationFirst: true,
   },
-}
+};
 
 export const NoExamples: Story = {
   args: {
@@ -58,7 +73,7 @@ export const NoExamples: Story = {
       examples: [],
     },
   },
-}
+};
 
 export const LongContent: Story = {
   args: {
@@ -77,14 +92,14 @@ export const LongContent: Story = {
       ],
     },
   },
-}
+};
 
 export const NoActionsMenu: Story = {
   args: {
     onEdit: undefined,
     onDelete: undefined,
   },
-}
+};
 
 export const WithoutTextToSpeech: Story = {
   name: 'Without Text-to-Speech (stubbed)',
@@ -98,24 +113,24 @@ export const WithoutTextToSpeech: Story = {
   },
   decorators: [
     (Story) => {
-      if (typeof window === 'undefined') return <Story />
+      if (typeof window === 'undefined') return <Story/>;
 
-      const original = window.speechSynthesis
+      const original = window.speechSynthesis;
       // Make `'speechSynthesis' in window` false by deleting, but avoid TS directives.
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const w = window as any
+      const w = window as any;
 
       try {
-        delete w.speechSynthesis
+        delete w.speechSynthesis;
       } catch {
-        w.speechSynthesis = undefined
+        w.speechSynthesis = undefined;
       }
 
       // Render story, then restore right away to avoid leaking into other stories.
       // (This is usually enough because Storybook re-renders per story.)
-      const element = <Story />
-      w.speechSynthesis = original
-      return element
+      const element = <Story/>;
+      w.speechSynthesis = original;
+      return element;
     },
   ],
-}
+};
