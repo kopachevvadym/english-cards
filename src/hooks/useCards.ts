@@ -61,7 +61,7 @@ export const useCards = () => {
 
   const { dataProvider, mongoConfig, isValidConfiguration } = useSettings()
   const wordSets = useWordSets()
-  const [wordSetAssignments, setWordSetAssignments] = useState<WordSetAssignments>({})
+  const [wordSetAssignments, setWordSetAssignments] = useState<WordSetAssignments>(() => loadAssignments())
 
   // Shuffle function - defined early to avoid initialization issues
   const shuffleArray = useCallback((array: Card[]) => {
@@ -100,15 +100,6 @@ export const useCards = () => {
     return manager
   }, [mongoConfig, isValidConfiguration])
 
-  // Load card assignments from localStorage
-  useEffect(() => {
-    setWordSetAssignments(loadAssignments())
-  }, [])
-
-  // Save card assignments to localStorage
-  useEffect(() => {
-    saveAssignments(wordSetAssignments)
-  }, [wordSetAssignments])
 
   // Load cards from current provider
   const loadCards = useCallback(async () => {
@@ -323,7 +314,7 @@ export const useCards = () => {
     }
 
     return cards.filter((c) => matchesSelectedSet(c))
-  }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
+  }, [cards, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
 
   const getActiveKnownCards = useCallback(() => {
     const selectedSet = selectedWordSetId

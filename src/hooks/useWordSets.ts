@@ -10,7 +10,6 @@ export const useWordSets = () => {
   const [state, setState] = useState<WordSetState>({ sets: [], selectedSetId: null });
 
   // Indicates we've loaded from localStorage at least once.
-  // We don't persist until this is true, otherwise we'd overwrite stored sets with the empty initial state.
   const hasLoadedFromStorageRef = useRef(false);
 
   // Load from localStorage after mount
@@ -19,13 +18,10 @@ export const useWordSets = () => {
     // Mark as loaded before applying state so any immediate state updates can't overwrite persisted data
     hasLoadedFromStorageRef.current = true;
     setState(stored);
-  }, []);
 
-  // Persist (only after we've loaded)
-  useEffect(() => {
-    if (!hasLoadedFromStorageRef.current) return;
-    saveWordSetState(state);
-  }, [state]);
+    // Re-save the normalized payload (e.g., ensuring createdAt is ISO) to keep storage consistent.
+    saveWordSetState(stored);
+  }, []);
 
   const sets = state.sets;
   const selectedSetId = state.selectedSetId;
@@ -36,15 +32,30 @@ export const useWordSets = () => {
   }, [sets, selectedSetId]);
 
   const createSet = useCallback((name: string) => {
-    setState((prev) => createWordSet(prev, name));
+    if (!hasLoadedFromStorageRef.current) return;
+    setState((prev) => {
+      const next = createWordSet(prev, name);
+      saveWordSetState(next);
+      return next;
+    });
   }, []);
 
   const switchToMain = useCallback(() => {
-    setState((prev) => selectWordSet(prev, null));
+    if (!hasLoadedFromStorageRef.current) return;
+    setState((prev) => {
+      const next = selectWordSet(prev, null);
+      saveWordSetState(next);
+      return next;
+    });
   }, []);
 
   const switchToSet = useCallback((id: WordSetId) => {
-    setState((prev) => selectWordSet(prev, id));
+    if (!hasLoadedFromStorageRef.current) return;
+    setState((prev) => {
+      const next = selectWordSet(prev, id);
+      saveWordSetState(next);
+      return next;
+    });
   }, []);
 
   return {
