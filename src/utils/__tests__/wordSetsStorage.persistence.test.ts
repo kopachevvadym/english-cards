@@ -32,4 +32,20 @@ describe('wordSetsStorage persistence', () => {
     const loaded = loadWordSetState()
     expect(loaded.selectedSetId).toBeNull()
   })
+
+  it('keeps selectedSetId when persisted sets are missing createdAt (backward compatible)', () => {
+    localStorage.setItem(
+      'english-cards-word-sets',
+      JSON.stringify({
+        sets: [{ id: 'set-1', name: 'Travel' }],
+        selectedSetId: 'set-1',
+      })
+    )
+
+    const loaded = loadWordSetState()
+    expect(loaded.sets).toHaveLength(1)
+    expect(loaded.sets[0].id).toBe('set-1')
+    expect(loaded.sets[0].createdAt).toBeInstanceOf(Date)
+    expect(loaded.selectedSetId).toBe('set-1')
+  })
 })

@@ -14,6 +14,21 @@ const WORD_SET_ASSIGNMENTS_KEY = 'english-cards-word-set-assignments'
 
 type WordSetAssignments = Record<string, string> // cardId -> setId
 
+// Read the selected set directly from persisted word set state.
+// This is intentionally independent from React state to avoid timing/hydration races.
+const getPersistedSelectedSetId = (): string | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem('english-cards-word-sets')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    const id = parsed?.selectedSetId
+    return typeof id === 'string' ? id : null
+  } catch {
+    return null
+  }
+}
+
 const loadAssignments = (): WordSetAssignments => {
   if (typeof window === 'undefined') return {}
   const raw = window.localStorage.getItem(WORD_SET_ASSIGNMENTS_KEY)
@@ -246,13 +261,17 @@ export const useCards = () => {
     const updatedCards = [...cards, ...newCards]
     await saveCards(updatedCards) // Don't preserve order when importing new cards
 
-    // If a custom set is selected, automatically assign imported cards to it.
-    if (wordSets.selectedSetId) {
+    // Assign imported cards to the currently selected set (if any).
+    // Prefer the latest persisted selection to avoid races during initial hydration.
+    const selectedSetId = wordSets.selectedSetId ?? getPersistedSelectedSetId()
+    if (selectedSetId) {
       setWordSetAssignments((prev) => {
         const next = { ...prev }
         newCards.forEach((c) => {
-          next[c.id] = <string>wordSets.selectedSetId
+          next[c.id] = selectedSetId
         })
+        // Persist immediately so a quick reload doesn't lose assignments.
+        saveAssignments(next)
         return next
       })
     }

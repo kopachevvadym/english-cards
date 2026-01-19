@@ -2,11 +2,11 @@ import { WordSet, WordSetId, WordSetState, normalizeSetName } from '@/types/word
 
 const STORAGE_KEY = 'english-cards-word-sets'
 
-type PersistedWordSet = Omit<WordSet, 'createdAt'> & { createdAt: string }
+type PersistedWordSet = { id?: unknown; name?: unknown; createdAt?: unknown } & Record<string, unknown>
 
 type PersistedState = {
   sets: PersistedWordSet[]
-  selectedSetId: WordSetId | null
+  selectedSetId: unknown
 }
 
 const defaultState: WordSetState = {
@@ -22,20 +22,33 @@ const safeJsonParse = <T>(value: string): T | null => {
   }
 }
 
+const safeDate = (value: unknown): Date => {
+  if (typeof value === 'string') {
+    const d = new Date(value)
+    if (!Number.isNaN(d.getTime())) return d
+  }
+  return new Date()
+}
+
 export const loadWordSetState = (): WordSetState => {
   if (typeof window === 'undefined') return defaultState
 
   const raw = window.localStorage.getItem(STORAGE_KEY)
   if (!raw) return defaultState
 
-  const parsed = safeJsonParse<PersistedState>(raw)
-  if (!parsed || !Array.isArray(parsed.sets)) return defaultState
+  const parsedUnknown = safeJsonParse<unknown>(raw)
+  if (!parsedUnknown || typeof parsedUnknown !== 'object') return defaultState
+
+  const parsed = parsedUnknown as PersistedState
+  if (!Array.isArray(parsed.sets)) return defaultState
 
   const sets = parsed.sets
-    .filter((s): s is PersistedWordSet => !!s && typeof s.id === 'string' && typeof s.name === 'string')
+    .filter((s): s is PersistedWordSet => !!s && typeof (s as any).id === 'string' && typeof (s as any).name === 'string')
     .map((s) => ({
-      ...s,
-      createdAt: new Date(s.createdAt),
+      ...(s as Record<string, unknown>),
+      id: (s as any).id as string,
+      name: (s as any).name as string,
+      createdAt: safeDate((s as any).createdAt),
     }))
 
   const selectedSetId = typeof parsed.selectedSetId === 'string' ? parsed.selectedSetId : null

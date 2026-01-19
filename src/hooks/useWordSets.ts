@@ -34,27 +34,15 @@ export const useWordSets = () => {
   }, [sets, selectedSetId]);
 
   const createSet = useCallback((name: string) => {
-    setState((prev) => {
-      const next = createWordSet(prev, name);
-      saveWordSetState(next);
-      return next;
-    });
+    setState((prev) => createWordSet(prev, name));
   }, []);
 
   const switchToMain = useCallback(() => {
-    setState((prev) => {
-      const next = selectWordSet(prev, null);
-      saveWordSetState(next);
-      return next;
-    });
+    setState((prev) => selectWordSet(prev, null));
   }, []);
 
   const switchToSet = useCallback((id: WordSetId) => {
-    setState((prev) => {
-      const next = selectWordSet(prev, id);
-      saveWordSetState(next);
-      return next;
-    });
+    setState((prev) => selectWordSet(prev, id));
   }, []);
 
   return {
