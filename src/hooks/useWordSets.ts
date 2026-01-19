@@ -15,8 +15,10 @@ export const useWordSets = () => {
 
   // Load from localStorage after mount
   useEffect(() => {
-    setState(loadWordSetState());
+    const stored = loadWordSetState();
+    // Mark as loaded before applying state so any immediate state updates can't overwrite persisted data
     hasLoadedFromStorageRef.current = true;
+    setState(stored);
   }, []);
 
   // Persist (only after we've loaded)

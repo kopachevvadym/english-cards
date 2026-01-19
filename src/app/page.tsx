@@ -305,7 +305,7 @@ export default function Home() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
 
                         <WordList
-                            cards={cards}
+                            cards={activeCards}
                             onMarkKnown={markAsKnown}
                             onMarkUnknown={markAsUnknown}
                             onDeleteCard={deleteCard}
