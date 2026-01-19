@@ -254,7 +254,7 @@ export default function Home() {
                             <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>List</Box>
                         </Button>
                         <Chip
-                            label={`${activeKnownCards.length}/${activeCards.length}`}
+                            label={`${activeCards.length - activeKnownCards.length}/${activeCards.length}`}
                             color="secondary"
                             variant="outlined"
                             sx={{
