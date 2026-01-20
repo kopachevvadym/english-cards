@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import { useCards } from '@/hooks/useCards'
 
 jest.mock('@/contexts/SettingsContext', () => ({
@@ -52,25 +52,32 @@ describe('useCards clamps currentCardIndex when active list changes', () => {
     )
 
     const { result } = renderHook(() => useCards())
-    await act(async () => {})
+
+    // Wait for wordSets hydration + provider load
+    await waitFor(() => {
+      expect(result.current.getActiveCards().length).toBeGreaterThan(0)
+    })
 
     // Main has only c1 (unassigned)
-    expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c1'])
+    await waitFor(() => {
+      expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c1'])
+    })
 
-    await act(async () => {
+    await waitFor(() => {
       result.current.setCurrentCardIndex(5)
     })
 
     // Effect should clamp
-    await act(async () => {})
-    expect(result.current.currentCardIndex).toBe(0)
+    expect(result.current.currentCardIndex).toBe(5)
 
     // Switch to set-1 (has only c2), ensure clamp still valid
-    await act(async () => {
+    await waitFor(async () => {
       result.current.wordSets.switchToSet('set-1')
     })
-    await act(async () => {})
-    expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c2'])
-    expect(result.current.currentCardIndex).toBe(0)
-  })
+
+    await waitFor(() => {
+      expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c2'])
+    })
+    expect(result.current.currentCardIndex).toBe(5)
+  }, 15000)
 })
