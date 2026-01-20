@@ -336,6 +336,14 @@ export const useCards = () => {
     return cards.filter((c) => matchesSelectedSet(c) && matchesKnownFilter(c))
   }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
 
+  const resetToFirstCard = useCallback(() => {
+    // if there unknown only get first of unknown cards index
+    const index = includeKnownWords
+      ? 0
+      : getActiveCards().findIndex(card => !card.isKnown)
+    setCurrentCardIndex(index >= 0 ? index : 0)
+  }, [includeKnownWords, getActiveCards])
+
   const toggleShuffle = useCallback(() => {
     const newShuffledState = !isShuffled
     setIsShuffled(newShuffledState)
@@ -348,8 +356,8 @@ export const useCards = () => {
       setShuffledOrder(shuffleArray(activeCards))
     }
 
-    setCurrentCardIndex(0) // Reset to first card when toggling shuffle
-  }, [isShuffled, cards, includeKnownWords, shuffleArray])
+    resetToFirstCard();
+  }, [isShuffled, cards, includeKnownWords, shuffleArray, resetToFirstCard])
 
   const toggleIncludeKnownWords = useCallback(() => {
     const newIncludeKnownWords = !includeKnownWords
@@ -363,8 +371,8 @@ export const useCards = () => {
       setShuffledOrder(shuffleArray(activeCards))
     }
 
-    setCurrentCardIndex(0) // Reset to first card when toggling mode
-  }, [includeKnownWords, isShuffled, cards, shuffleArray])
+    resetToFirstCard();
+  }, [includeKnownWords, isShuffled, cards, shuffleArray, resetToFirstCard])
 
   // Helper function to find next valid card index
   const findNextValidCardIndex = useCallback((currentIndex: number, direction: 'next' | 'prev' = 'next') => {
@@ -410,8 +418,8 @@ export const useCards = () => {
   const resetProgress = useCallback(async () => {
     const resetCards = cards.map(card => ({ ...card, isKnown: false }))
     await saveCards(resetCards, true) // Preserve shuffled order when resetting progress
-    setCurrentCardIndex(0)
-  }, [cards, saveCards])
+    resetToFirstCard();
+  }, [cards, saveCards, resetToFirstCard])
 
   const exportProgress = () => {
     const exportData = {
@@ -456,7 +464,7 @@ export const useCards = () => {
 
           // Replace current cards with imported ones
           await saveCards(importedCards) // Don't preserve order when importing progress
-          setCurrentCardIndex(0)
+          resetToFirstCard();
           resolve()
         } catch (error) {
           reject(new Error('Failed to import progress file'))
@@ -465,7 +473,7 @@ export const useCards = () => {
       reader.onerror = () => reject(new Error('Failed to read file'))
       reader.readAsText(file)
     })
-  }, [saveCards])
+  }, [saveCards, resetToFirstCard])
 
   const deleteCard = useCallback(async (cardId: string) => {
     setIsLoading(true)
