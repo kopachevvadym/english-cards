@@ -78,6 +78,6 @@ describe('useCards clamps currentCardIndex when active list changes', () => {
     await waitFor(() => {
       expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c2'])
     })
-    expect(result.current.currentCardIndex).toBe(5)
+    expect(result.current.currentCardIndex).toBe(0)
   }, 15000)
 })
