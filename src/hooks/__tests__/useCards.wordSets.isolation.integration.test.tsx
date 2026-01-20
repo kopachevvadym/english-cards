@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { useCards } from '@/hooks/useCards'
 
 jest.mock('@/contexts/SettingsContext', () => ({
@@ -66,14 +66,14 @@ describe('useCards word set isolation', () => {
     const { result } = renderHook(() => useCards())
 
     // Let effects run: mount + provider load
-    await act(async () => {})
+    await waitFor(async () => {})
 
     // Main set should only include unassigned card c1
     const mainCards = result.current.getActiveCards().map((c) => c.id)
     expect(mainCards).toEqual(['c1'])
 
     // Switch to set-1 and ensure only c2 appears
-    await act(async () => {
+    await waitFor(async () => {
       result.current.wordSets.switchToSet('set-1')
     })
 
@@ -100,13 +100,13 @@ describe('useCards word set isolation', () => {
     )
 
     const { result } = renderHook(() => useCards())
-    await act(async () => {})
+    await waitFor(async () => {})
 
     // In the custom set, we start with c1
     expect(result.current.getActiveCards().map((c) => c.id)).toEqual(['c1'])
 
     // Delete from custom set: should unassign, NOT delete from provider
-    await act(async () => {
+    await waitFor(async () => {
       await result.current.deleteCard('c1')
     })
 
@@ -116,7 +116,7 @@ describe('useCards word set isolation', () => {
     expect(result.current.getActiveCards().map((c) => c.id)).toEqual([])
 
     // ...but should appear in main (unassigned)
-    await act(async () => {
+    await waitFor(async () => {
       result.current.wordSets.switchToMain()
     })
 
