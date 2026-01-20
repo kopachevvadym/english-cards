@@ -6,6 +6,45 @@ import { DataProviderManager } from '@/providers/DataProviderManager'
 import { LocalStorageProvider } from '@/providers/LocalStorageProvider'
 import { useSettings } from '@/contexts/SettingsContext'
 import { ProviderError, DataProviderError } from '@/providers/types'
+import { useWordSets } from '@/hooks/useWordSets'
+
+// Local mapping of cardId -> setId (single assignment) stored in localStorage.
+// This keeps actual words in the main set storage, but allows filtering views.
+const WORD_SET_ASSIGNMENTS_KEY = 'english-cards-word-set-assignments'
+
+type WordSetAssignments = Record<string, string> // cardId -> setId
+
+// Read the selected set directly from persisted word set state.
+// This is intentionally independent from React state to avoid timing/hydration races.
+const getPersistedSelectedSetId = (): string | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem('english-cards-word-sets')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    const id = parsed?.selectedSetId
+    return typeof id === 'string' ? id : null
+  } catch {
+    return null
+  }
+}
+
+const loadAssignments = (): WordSetAssignments => {
+  if (typeof window === 'undefined') return {}
+  const raw = window.localStorage.getItem(WORD_SET_ASSIGNMENTS_KEY)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? (parsed as WordSetAssignments) : {}
+  } catch {
+    return {}
+  }
+}
+
+const saveAssignments = (assignments: WordSetAssignments) => {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(WORD_SET_ASSIGNMENTS_KEY, JSON.stringify(assignments))
+}
 
 export const useCards = () => {
   const [cards, setCards] = useState<Card[]>([])
@@ -21,6 +60,8 @@ export const useCards = () => {
   const [error, setError] = useState<string | null>(null)
 
   const { dataProvider, mongoConfig, isValidConfiguration } = useSettings()
+  const wordSets = useWordSets()
+  const [wordSetAssignments, setWordSetAssignments] = useState<WordSetAssignments>(() => loadAssignments())
 
   // Shuffle function - defined early to avoid initialization issues
   const shuffleArray = useCallback((array: Card[]) => {
@@ -58,6 +99,7 @@ export const useCards = () => {
 
     return manager
   }, [mongoConfig, isValidConfiguration])
+
 
   // Load cards from current provider
   const loadCards = useCallback(async () => {
@@ -210,11 +252,26 @@ export const useCards = () => {
     const updatedCards = [...cards, ...newCards]
     await saveCards(updatedCards) // Don't preserve order when importing new cards
 
+    // Assign imported cards to the currently selected set (if any).
+    // Prefer the latest persisted selection to avoid races during initial hydration.
+    const selectedSetId = wordSets.selectedSetId ?? getPersistedSelectedSetId()
+    if (selectedSetId) {
+      setWordSetAssignments((prev) => {
+        const next = { ...prev }
+        newCards.forEach((c) => {
+          next[c.id] = selectedSetId
+        })
+        // Persist immediately so a quick reload doesn't lose assignments.
+        saveAssignments(next)
+        return next
+      })
+    }
+
     return {
       imported: newCards.length,
       skipped: candidateCards.length - newCards.length
     }
-  }, [cards, saveCards])
+  }, [cards, saveCards, wordSets.selectedSetId])
 
   const markAsKnown = useCallback(async (cardId: string) => {
     const updatedCards = cards.map(card =>
@@ -234,18 +291,62 @@ export const useCards = () => {
     await saveCards(updatedCards, true) // Preserve shuffled order
   }, [cards, saveCards])
 
+  const selectedWordSetId = wordSets.selectedSetId
+
+  const assignCardToSelectedSet = useCallback((cardId: string) => {
+    if (!selectedWordSetId) return
+    setWordSetAssignments((prev) => ({ ...prev, [cardId]: selectedWordSetId }))
+  }, [selectedWordSetId])
+
   const getActiveCards = useCallback(() => {
-    if (isShuffled && shuffledOrder.length > 0) {
-      // In shuffled mode, return the complete shuffled order
-      // Navigation logic will handle skipping known cards if needed
-      return shuffledOrder
+    const selectedSet = selectedWordSetId
+
+    const matchesSelectedSet = (card: Card) => {
+      const assignedSetId = wordSetAssignments[card.id]
+      // Main set should only show cards that are NOT assigned to any custom set
+      if (!selectedSet) return !assignedSetId
+      return assignedSetId === selectedSet
     }
 
-    // In sequential mode, filter based on includeKnownWords setting
-    return includeKnownWords
-      ? cards
-      : cards.filter(card => !card.isKnown)
-  }, [cards, includeKnownWords, isShuffled, shuffledOrder])
+    if (isShuffled && shuffledOrder.length > 0) {
+      // In shuffled mode, return the complete shuffled order, filtered by set + known filter
+      return shuffledOrder.filter((c) => matchesSelectedSet(c))
+    }
+
+    return cards.filter((c) => matchesSelectedSet(c))
+  }, [cards, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
+
+  const getActiveKnownCards = useCallback(() => {
+    const selectedSet = selectedWordSetId
+
+    const matchesSelectedSet = (card: Card) => {
+      const assignedSetId = wordSetAssignments[card.id]
+      // Main set should only show cards that are NOT assigned to any custom set
+      if (!selectedSet) return !assignedSetId
+      return assignedSetId === selectedSet
+    }
+
+    const matchesKnownFilter = (card: Card) => includeKnownWords || !card.isKnown
+
+    if (isShuffled && shuffledOrder.length > 0) {
+      // In shuffled mode, return the complete shuffled order, filtered by set + known filter
+      return shuffledOrder.filter((c) => matchesSelectedSet(c) && matchesKnownFilter(c))
+    }
+
+    return cards.filter((c) => matchesSelectedSet(c) && matchesKnownFilter(c))
+  }, [cards, includeKnownWords, isShuffled, shuffledOrder, selectedWordSetId, wordSetAssignments])
+
+  const resetToFirstCard = useCallback(() => {
+    // if there unknown only get first of unknown cards index
+    const index = includeKnownWords
+      ? 0
+      : getActiveCards().findIndex(card => !card.isKnown)
+    setCurrentCardIndex(index >= 0 ? index : 0)
+  }, [includeKnownWords, getActiveCards])
+
+  useEffect(() => {
+    resetToFirstCard();
+  }, [resetToFirstCard, selectedWordSetId])
 
   const toggleShuffle = useCallback(() => {
     const newShuffledState = !isShuffled
@@ -259,8 +360,8 @@ export const useCards = () => {
       setShuffledOrder(shuffleArray(activeCards))
     }
 
-    setCurrentCardIndex(0) // Reset to first card when toggling shuffle
-  }, [isShuffled, cards, includeKnownWords, shuffleArray])
+    resetToFirstCard();
+  }, [isShuffled, cards, includeKnownWords, shuffleArray, resetToFirstCard])
 
   const toggleIncludeKnownWords = useCallback(() => {
     const newIncludeKnownWords = !includeKnownWords
@@ -274,8 +375,8 @@ export const useCards = () => {
       setShuffledOrder(shuffleArray(activeCards))
     }
 
-    setCurrentCardIndex(0) // Reset to first card when toggling mode
-  }, [includeKnownWords, isShuffled, cards, shuffleArray])
+    resetToFirstCard();
+  }, [includeKnownWords, isShuffled, cards, shuffleArray, resetToFirstCard])
 
   // Helper function to find next valid card index
   const findNextValidCardIndex = useCallback((currentIndex: number, direction: 'next' | 'prev' = 'next') => {
@@ -321,8 +422,8 @@ export const useCards = () => {
   const resetProgress = useCallback(async () => {
     const resetCards = cards.map(card => ({ ...card, isKnown: false }))
     await saveCards(resetCards, true) // Preserve shuffled order when resetting progress
-    setCurrentCardIndex(0)
-  }, [cards, saveCards])
+    resetToFirstCard();
+  }, [cards, saveCards, resetToFirstCard])
 
   const exportProgress = () => {
     const exportData = {
@@ -367,7 +468,7 @@ export const useCards = () => {
 
           // Replace current cards with imported ones
           await saveCards(importedCards) // Don't preserve order when importing progress
-          setCurrentCardIndex(0)
+          resetToFirstCard();
           resolve()
         } catch (error) {
           reject(new Error('Failed to import progress file'))
@@ -376,18 +477,54 @@ export const useCards = () => {
       reader.onerror = () => reject(new Error('Failed to read file'))
       reader.readAsText(file)
     })
-  }, [saveCards])
+  }, [saveCards, resetToFirstCard])
 
   const deleteCard = useCallback(async (cardId: string) => {
     setIsLoading(true)
     setError(null)
 
     try {
+      const selectedSet = selectedWordSetId
+
+      // If we're inside a custom set, deleting should only remove the card from that set.
+      // Since assignments are single-set, that means unassigning it.
+      if (selectedSet) {
+        setWordSetAssignments((prev) => {
+          if (prev[cardId] !== selectedSet) return prev
+          const next = { ...prev }
+          delete next[cardId]
+          // Persist immediately so UI stays consistent across reloads.
+          saveAssignments(next)
+          return next
+        })
+
+        // Adjust the current card index based on the new active list after unassignment.
+        // We compute with the latest in-memory assignments (best-effort).
+        const activeCards = getActiveCards().filter((c) => c.id !== cardId)
+        if (currentCardIndex >= activeCards.length && activeCards.length > 0) {
+          setCurrentCardIndex(activeCards.length - 1)
+        } else if (activeCards.length === 0) {
+          setCurrentCardIndex(0)
+        }
+
+        return
+      }
+
+      // Main set: this is an unassigned card, so delete it globally.
       await providerManager.deleteCard(cardId)
 
       // Update local state
       const updatedCards = cards.filter(card => card.id !== cardId)
       setCards(updatedCards)
+
+      // Remove any lingering assignment (defensive)
+      setWordSetAssignments((prev) => {
+        if (!prev[cardId]) return prev
+        const next = { ...prev }
+        delete next[cardId]
+        saveAssignments(next)
+        return next
+      })
 
       // Update shuffled order if currently shuffled
       if (isShuffled) {
@@ -395,7 +532,6 @@ export const useCards = () => {
       }
 
       // Adjust current card index if necessary
-      // Calculate active cards based on updated cards
       const activeCards = includeKnownWords
         ? updatedCards
         : updatedCards.filter(card => !card.isKnown)
@@ -415,7 +551,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager, cards, currentCardIndex, includeKnownWords, isShuffled])
+  }, [providerManager, cards, currentCardIndex, includeKnownWords, isShuffled, selectedWordSetId, getActiveCards])
 
   // Add a new card using the provider
   const addCard = useCallback(async (cardData: Omit<Card, 'id' | 'createdAt'>) => {
@@ -430,6 +566,12 @@ export const useCards = () => {
 
     try {
       await providerManager.saveCard(newCard)
+
+      // If a custom set is selected, assign newly created card to it
+      if (selectedWordSetId) {
+        setWordSetAssignments((prev) => ({ ...prev, [newCard.id]: selectedWordSetId }))
+      }
+
       setCards(prevCards => {
         const updatedCards = [...prevCards, newCard]
 
@@ -454,7 +596,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [providerManager, isShuffled, includeKnownWords, shuffleArray])
+  }, [providerManager, isShuffled, includeKnownWords, shuffleArray, selectedWordSetId])
 
   // Update an existing card using the provider
   const updateCard = useCallback(async (updatedCard: Card) => {
@@ -525,6 +667,7 @@ export const useCards = () => {
     markAsKnown,
     markAsUnknown,
     getActiveCards,
+    getActiveKnownCards,
     resetProgress,
     isShuffled,
     toggleShuffle,
@@ -549,6 +692,10 @@ export const useCards = () => {
     findNextValidCardIndex,
 
     // Provider manager access for advanced use cases
-    providerManager
+    providerManager,
+
+    // Word sets
+    wordSets,
+    assignCardToSelectedSet,
   }
 }

@@ -8,6 +8,7 @@ import { LocalStorageProvider } from '../LocalStorageProvider'
 import { MongoDBProvider } from '../MongoDBProvider'
 import { FallbackHandler, ErrorNotification } from '../FallbackHandler'
 import { ProviderError } from '../types'
+import { Card } from '@/types/card';
 
 // Example: Setting up providers with fallback
 export function setupProvidersWithFallback() {
@@ -74,12 +75,13 @@ export async function demonstrateFallbackUsage() {
     console.log(`Retrieved ${cards.length} cards`)
 
     // Save a new card
-    const newCard = {
+    const newCard: Card = {
       id: 'demo-1',
       word: 'example',
       translation: 'ejemplo',
       isKnown: false,
-      createdAt: new Date()
+      createdAt: new Date(),
+      examples: [],
     }
 
     const savedCard = await manager.saveCard(newCard)

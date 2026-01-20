@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
     Container,
     Typography,
@@ -41,6 +41,7 @@ import { GameStats } from '@/components/GameStats'
 import { useCards } from '@/hooks/useCards'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Card, Example } from '@/types/card'
+import { WordSetSelector } from '@/components/WordSetSelector'
 
 export default function Home() {
     const {
@@ -51,6 +52,7 @@ export default function Home() {
         markAsKnown,
         markAsUnknown,
         getActiveCards,
+        getActiveKnownCards,
         resetProgress,
         isShuffled,
         toggleShuffle,
@@ -62,6 +64,7 @@ export default function Home() {
         updateCard,
         navigateToNext,
         navigateToPrevious,
+        wordSets,
     } = useCards()
 
     const { showTranslationFirst, setShowTranslationFirst } = useSettings()
@@ -75,9 +78,14 @@ export default function Home() {
     const settingsOpen = Boolean(settingsAnchorEl)
 
     const activeCards = getActiveCards()
+    const activeKnownCards = getActiveKnownCards()
     const currentCard = activeCards[currentCardIndex]
-    const unknownCards = cards.filter(card => !card.isKnown)
-    const progress = cards.length > 0 ? ((cards.length - unknownCards.length) / cards.length) * 100 : 0
+
+    // Progress is scoped to the currently selected set (activeCards)
+    const progress = activeCards.length > 0
+      ? ((activeCards.length - activeKnownCards.length) / activeCards.length) * 100
+      : 0
+
 
     const handleNext = () => {
         navigateToNext()
@@ -205,6 +213,14 @@ export default function Home() {
                         gap: { xs: 1, sm: 2 },
                         flexWrap: 'wrap'
                     }}>
+                        <WordSetSelector
+                          sets={wordSets.sets}
+                          selectedSetId={wordSets.selectedSetId}
+                          selectedSetName={wordSets.selectedSet?.name ?? null}
+                          onSelectMain={wordSets.switchToMain}
+                          onSelectSet={wordSets.switchToSet}
+                          onCreateSet={wordSets.createSet}
+                        />
                         <Button
                             variant={viewMode === 'cards' ? 'contained' : 'outlined'}
                             size="small"
@@ -238,7 +254,7 @@ export default function Home() {
                             <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>List</Box>
                         </Button>
                         <Chip
-                            label={`${cards.length - unknownCards.length}/${cards.length}`}
+                            label={`${activeCards.length - activeKnownCards.length}/${activeCards.length}`}
                             color="secondary"
                             variant="outlined"
                             sx={{
@@ -290,7 +306,7 @@ export default function Home() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%' }}>
 
                         <WordList
-                            cards={cards}
+                            cards={activeCards}
                             onMarkKnown={markAsKnown}
                             onMarkUnknown={markAsUnknown}
                             onDeleteCard={deleteCard}
@@ -316,7 +332,7 @@ export default function Home() {
                                             Congratulations! 🎉
                                         </Typography>
                                         <Typography>
-                                            You've learned all your cards! You can reset your progress to review them again, or toggle "All Words" to practice known words.
+                                            You&apos;ve learned all your cards! You can reset your progress to review them again, or toggle &quot;All Words&quot; to practice known words.
                                         </Typography>
                                     </Alert>
                                 ) : (
@@ -510,14 +526,24 @@ export default function Home() {
                                     </Button>
                                 </Box>
 
-                                <FlashCard
+                                {activeCards.length === 0 ? (
+                                  <Typography variant="body1" sx={{ color: 'white', opacity: 0.9, textAlign: 'center', mt: 3 }}>
+                                    No words in this set yet.
+                                  </Typography>
+                                ) : !currentCard ? (
+                                  <Typography variant="body1" sx={{ color: 'white', opacity: 0.9, textAlign: 'center', mt: 3 }}>
+                                    Select another card.
+                                  </Typography>
+                                ) : (
+                                  <FlashCard
                                     card={currentCard}
                                     onMarkKnown={handleMarkKnown}
                                     onMarkUnknown={handleMarkUnknown}
                                     onEdit={handleEditCard}
                                     onDelete={handleDeleteCard}
                                     showTranslationFirst={showTranslationFirst}
-                                />
+                                  />
+                                )}
 
                                 <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                                     <GameStats

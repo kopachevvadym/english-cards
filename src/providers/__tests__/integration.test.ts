@@ -5,7 +5,7 @@ import { Card } from '../../types/card'
 // Mock localStorage for integration test
 const localStorageMock = {
   store: {} as Record<string, string>,
-  getItem: jest.fn((key: string) => localStorageMock.store[key] || null),
+  getItem: jest.fn((key: string): string | null => localStorageMock.store[key] || null),
   setItem: jest.fn((key: string, value: string) => {
     localStorageMock.store[key] = value
   }),
@@ -38,8 +38,13 @@ describe('LocalStorageProvider Integration', () => {
       translation: 'integración',
       isKnown: false,
       createdAt: new Date('2023-01-01T00:00:00.000Z'),
-      example: 'This is an integration test',
-      exampleTranslation: 'Esta es una prueba de integración',
+      examples: [
+        {
+          id: 'integration-test-card-ex-1',
+          text: 'This is an integration test',
+          translation: 'Esta es una prueba de integración'
+        }
+      ]
     }
   })
 

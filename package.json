@@ -29,7 +29,7 @@
     "@storybook/addon-vitest": "^10.1.11",
     "@storybook/nextjs-vite": "^10.1.11",
     "@testing-library/jest-dom": "^6.8.0",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
     "@types/mongodb": "^4.0.6",
     "@types/node": "^20",
