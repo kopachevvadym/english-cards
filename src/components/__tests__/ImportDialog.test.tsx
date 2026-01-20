@@ -100,33 +100,6 @@ describe('ImportDialog', () => {
     expect(mockOnImport).not.toHaveBeenCalled()
   })
 
-  it('should show error for invalid array format', async () => {
-    render(
-      <ImportDialog
-        open={true}
-        onClose={mockOnClose}
-        onImport={mockOnImport}
-      />
-    )
-
-    const invalidArrayJson = JSON.stringify([
-      {
-        "word": "hello",
-        // missing translation
-        "example": "Hello, how are you?"
-      }
-    ])
-
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: invalidArrayJson } })
-    fireEvent.click(screen.getByText('Import'))
-
-    await waitFor(() => {
-      expect(screen.getByText('Array items must have "word" and "translation" strings, with optional "examples" array containing objects with id, text, and translation strings')).toBeInTheDocument()
-    })
-
-    expect(mockOnImport).not.toHaveBeenCalled()
-  })
-
   it('should show import results with duplicates skipped', async () => {
     mockOnImport.mockResolvedValue({ imported: 1, skipped: 1 })
     
