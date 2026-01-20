@@ -55,9 +55,7 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
     const term = debouncedSearchTerm.toLowerCase().trim()
     return cards.filter(card => 
       card.word.toLowerCase().includes(term) ||
-      card.translation.toLowerCase().includes(term) ||
-      (card.example && card.example.toLowerCase().includes(term)) ||
-      (card.exampleTranslation && card.exampleTranslation.toLowerCase().includes(term))
+      card.translation.toLowerCase().includes(term)
     )
   }, [cards, debouncedSearchTerm])
 
@@ -248,27 +246,6 @@ export const WordList = ({ cards, onMarkKnown, onMarkUnknown, onDeleteCard, onUp
                     >
                       {card.translation}
                     </Typography>
-                    
-                    {card.example && (
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary"
-                        sx={{ 
-                          mt: 1,
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                          fontStyle: 'italic',
-                          opacity: 0.8,
-                          wordBreak: 'break-word'
-                        }}
-                      >
-                        Example: "{card.example}"
-                        {card.exampleTranslation && (
-                          <span style={{ display: 'block', marginTop: '0.25rem' }}>
-                            → "{card.exampleTranslation}"
-                          </span>
-                        )}
-                      </Typography>
-                    )}
                   </Box>
                   
                   <Box sx={{ 
