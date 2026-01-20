@@ -344,6 +344,10 @@ export const useCards = () => {
     setCurrentCardIndex(index >= 0 ? index : 0)
   }, [includeKnownWords, getActiveCards])
 
+  useEffect(() => {
+    resetToFirstCard();
+  }, [resetToFirstCard, selectedWordSetId])
+
   const toggleShuffle = useCallback(() => {
     const newShuffledState = !isShuffled
     setIsShuffled(newShuffledState)
