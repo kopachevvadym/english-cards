@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { useCards } from '@/hooks/useCards'
 
 // Minimal settings mock so useCards can run in tests.
@@ -46,7 +46,7 @@ describe('useCards importWords -> word set assignment', () => {
 
     const { result } = renderHook(() => useCards())
 
-    await act(async () => {
+    await waitFor(async () => {
       await result.current.importCards({ hello: 'hola' })
     })
 
@@ -72,10 +72,10 @@ describe('useCards importWords -> word set assignment', () => {
     const { result } = renderHook(() => useCards())
 
     // Import the same word twice
-    await act(async () => {
+    await waitFor(async () => {
       await result.current.importCards({ hello: 'hola' })
     })
-    await act(async () => {
+    await waitFor(async () => {
       await result.current.importCards({ hello: 'hola' })
     })
 
