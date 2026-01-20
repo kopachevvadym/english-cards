@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react';
 import { useCards } from '@/hooks/useCards'
 
 jest.mock('@/contexts/SettingsContext', () => ({
@@ -48,12 +48,12 @@ describe('useCards importWords assignment persists across reload', () => {
 
     const { result, unmount } = renderHook(() => useCards())
 
-    await act(async () => {
+    await waitFor(async () => {
       await result.current.importCards({ hello: 'hola' })
     })
 
     // Switch explicitly (in case hydration started as main)
-    await act(async () => {
+    await waitFor(() => {
       result.current.wordSets.switchToSet('set-1')
     })
 
@@ -61,7 +61,7 @@ describe('useCards importWords assignment persists across reload', () => {
     expect(result.current.getActiveCards().map((c) => c.word)).toEqual(['hello'])
 
     // And hidden from main
-    await act(async () => {
+    await waitFor(() => {
       result.current.wordSets.switchToMain()
     })
     expect(result.current.getActiveCards().map((c) => c.word)).toEqual([])
@@ -71,17 +71,14 @@ describe('useCards importWords assignment persists across reload', () => {
 
     const { result: result2 } = renderHook(() => useCards())
 
-    // Let mount effects run (provider load + wordSets hydration)
-    await act(async () => {})
-
     // Should still be in set-1
-    await act(async () => {
+    await waitFor(() => {
       result2.current.wordSets.switchToSet('set-1')
     })
     expect(result2.current.getActiveCards().map((c) => c.word)).toEqual(['hello'])
 
     // Should still be hidden from main
-    await act(async () => {
+    await waitFor(() => {
       result2.current.wordSets.switchToMain()
     })
     expect(result2.current.getActiveCards().map((c) => c.word)).toEqual([])
