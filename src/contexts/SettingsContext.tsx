@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
 import { MongoDBConfig, ProviderConfig, AppSettings } from '../providers/types'
 import { validateProviderConfiguration } from '../utils/settingsValidation'
 import { loadSettings, saveSettings, isStorageAvailable } from '../utils/settingsStorage'
@@ -113,54 +113,42 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }
   }, [settings, isInitialized, storageAvailable])
 
-  const setDataProvider = (provider: DataProviderType) => {
-    setSettings(prev => ({
-      ...prev,
-      selectedProvider: provider
-    }))
-  }
+  const setDataProvider = useCallback((provider: DataProviderType) => {
+    setSettings(prev => ({ ...prev, selectedProvider: provider }))
+  }, [])
 
-  const setMongoConfig = (config: MongoDBConfig) => {
+  const setMongoConfig = useCallback((config: MongoDBConfig) => {
     setSettings(prev => ({
       ...prev,
       providers: {
         ...prev.providers,
-        mongodb: {
-          ...prev.providers.mongodb,
-          config
-        }
+        mongodb: { ...prev.providers.mongodb, config }
       }
     }))
-  }
+  }, [])
 
-  const setShowTranslationFirst = (show: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      showTranslationFirst: show
-    }))
-  }
+  const setShowTranslationFirst = useCallback((show: boolean) => {
+    setSettings(prev => ({ ...prev, showTranslationFirst: show }))
+  }, [])
 
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({
       ...prev,
       ...newSettings,
-      providers: {
-        ...prev.providers,
-        ...newSettings.providers
-      }
+      providers: { ...prev.providers, ...newSettings.providers }
     }))
-  }
+  }, [])
 
-  const isValidConfiguration = (provider: DataProviderType): boolean => {
+  const isValidConfiguration = useCallback((provider: DataProviderType): boolean => {
     const result = validateProviderConfiguration(provider, settings)
     return result.isValid
-  }
+  }, [settings])
 
-  const resetToDefaults = () => {
+  const resetToDefaults = useCallback(() => {
     setSettings(DEFAULT_SETTINGS)
-  }
+  }, [])
 
-  const contextValue: SettingsContextType = {
+  const contextValue: SettingsContextType = useMemo(() => ({
     dataProvider: settings.selectedProvider as DataProviderType,
     setDataProvider,
     mongoConfig: settings.providers.mongodb.config,
@@ -172,7 +160,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     isValidConfiguration,
     resetToDefaults,
     isStorageAvailable: storageAvailable
-  }
+  }), [settings, isValidConfiguration, storageAvailable])
 
   return (
     <SettingsContext.Provider value={contextValue}>

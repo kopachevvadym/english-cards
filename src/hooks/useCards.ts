@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, Example } from '@/types/card'
 import { DataProviderManager } from '@/providers/DataProviderManager'
 import { LocalStorageProvider } from '@/providers/LocalStorageProvider'
@@ -63,6 +63,12 @@ export const useCards = () => {
   const wordSets = useWordSets()
   const [wordSetAssignments, setWordSetAssignments] = useState<WordSetAssignments>(() => loadAssignments())
 
+  // Refs to avoid stale closures in loadCards without causing re-creation
+  const isShuffledRef = useRef(isShuffled)
+  isShuffledRef.current = isShuffled
+  const includeKnownWordsRef = useRef(includeKnownWords)
+  includeKnownWordsRef.current = includeKnownWords
+
   // Shuffle function - defined early to avoid initialization issues
   const shuffleArray = useCallback((array: Card[]) => {
     const shuffled = [...array]
@@ -74,6 +80,8 @@ export const useCards = () => {
   }, [])
 
   // Initialize DataProviderManager with error handling
+  // NOTE: isValidConfiguration is intentionally excluded — it's only needed client-side for
+  // provider switching, not during initialization (the server-side branch never runs in browser).
   const providerManager = useMemo(() => {
     const manager = new DataProviderManager((error: ProviderError) => {
       console.error('Provider error:', error)
@@ -86,19 +94,9 @@ export const useCards = () => {
     // Register providers
     manager.registerProvider('localhost', new LocalStorageProvider())
 
-    // Only register MongoDB if configuration is valid and we're in a server environment
-    if (isValidConfiguration('mongodb') && typeof window === 'undefined') {
-      // Dynamic import for MongoDB provider to avoid client-side bundling issues
-      import('@/providers/MongoDBProvider').then(({ MongoDBProvider }) => {
-        manager.registerProvider('mongodb', new MongoDBProvider(mongoConfig))
-      }).catch(error => {
-        console.error('Failed to load MongoDB provider:', error)
-        setError('MongoDB provider is not available in this environment')
-      })
-    }
-
     return manager
-  }, [mongoConfig, isValidConfiguration])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
 
   // Load cards from current provider
@@ -112,9 +110,9 @@ export const useCards = () => {
       const loadedCards = await providerManager.getCards()
       setCards(loadedCards)
 
-      // Initialize shuffled order if currently shuffled
-      if (isShuffled) {
-        const activeCards = includeKnownWords
+      // Initialize shuffled order if currently shuffled (use refs to avoid stale closure)
+      if (isShuffledRef.current) {
+        const activeCards = includeKnownWordsRef.current
           ? loadedCards
           : loadedCards.filter(card => !card.isKnown)
         setShuffledOrder(shuffleArray(activeCards))
@@ -128,7 +126,7 @@ export const useCards = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [mounted, providerManager, isShuffled, includeKnownWords, shuffleArray])
+  }, [mounted, providerManager, shuffleArray])
 
   // Switch provider when dataProvider setting changes
   useEffect(() => {
